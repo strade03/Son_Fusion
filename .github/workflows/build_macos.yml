@@ -1,0 +1,61 @@
+name: Build macOS
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    name: Build on macOS
+    runs-on: macos-latest
+    
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.5.0'
+          host: 'mac'
+          target: 'desktop'
+          
+      - name: Installation de FFmpeg (via Homebrew)
+        run: brew install ffmpeg
+
+      - name: Compilation (Build)
+        run: |
+          qmake son_fusion.pro CONFIG+=release
+          make -j$(sysctl -n hw.ncpu)
+
+      - name: Création du paquet (Deploy)
+        run: |
+          # Créer dossier temporaire
+          mkdir -p deploy
+          cp -r son_fusion.app deploy/
+          
+          # Préparer les dossiers dans le .app
+          mkdir -p deploy/son_fusion.app/Contents/MacOS
+          
+          # Trouver où brew a installé ffmpeg et le copier
+          FFMPEG_BIN=$(brew --prefix ffmpeg)/bin
+          cp "$FFMPEG_BIN/ffmpeg" deploy/son_fusion.app/Contents/MacOS/
+          cp "$FFMPEG_BIN/ffprobe" deploy/son_fusion.app/Contents/MacOS/
+          
+          # Rendre exécutable
+          chmod +x deploy/son_fusion.app/Contents/MacOS/ffmpeg
+          chmod +x deploy/son_fusion.app/Contents/MacOS/ffprobe
+          
+          # Utiliser l'outil Qt pour finir le travail (libs + dmg)
+          macdeployqt deploy/son_fusion.app -dmg -verbose=2
+          
+          # Renommer pour être clair
+          mv deploy/son_fusion.dmg SonFusion_macOS.dmg
+
+      - name: Sauvegarder le DMG (Artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonFusion-macOS
+          path: SonFusion_macOS.dmg
