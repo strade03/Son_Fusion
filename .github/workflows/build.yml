@@ -83,6 +83,10 @@ jobs:
       - name: Installation des dépendances Linux
         run: |
           sudo apt-get update
+          
+          # FIX : Installer libunwind-dev en premier pour éviter le conflit "held broken packages"
+          sudo apt-get install -y libunwind-dev
+          
           # Installation des libs graphiques, audio et FFmpeg
           sudo apt-get install -y build-essential libgl1-mesa-dev libxkbcommon-x11-0 \
             libpulse-dev libasound2-dev libgstreamer-plugins-base1.0-dev \
