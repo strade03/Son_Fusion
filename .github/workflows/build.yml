@@ -44,32 +44,35 @@ jobs:
           qmake son_fusion.pro CONFIG+=release
           make -j$(sysctl -n hw.ncpu)
 
-      - name: Création du DMG
+      - name: Création du paquet et Signature
         run: |
           mkdir -p deploy
           cp -r son_fusion.app deploy/
           
           mkdir -p deploy/son_fusion.app/Contents/MacOS
           
-          # On récupère le FFmpeg installé par GitHub (plus sûr que le fichier local)
+          # 1. Copie de FFmpeg
           FFMPEG_BIN=$(brew --prefix ffmpeg)/bin
           cp "$FFMPEG_BIN/ffmpeg" deploy/son_fusion.app/Contents/MacOS/
           cp "$FFMPEG_BIN/ffprobe" deploy/son_fusion.app/Contents/MacOS/
-          
           chmod +x deploy/son_fusion.app/Contents/MacOS/ffmpeg
           chmod +x deploy/son_fusion.app/Contents/MacOS/ffprobe
           
-          # MacDeployQt crée le bundle autonome + le DMG
-          # macdeployqt deploy/son_fusion.app -dmg -verbose=2
-          macdeployqt deploy/son_fusion.app -dmg -verbose=2 -sign=-
+          # 2. On utilise macdeployqt UNIQUEMENT pour copier les librairies Qt (pas de dmg, pas de sign)
+          macdeployqt deploy/son_fusion.app -verbose=2
           
+          # 3. SIGNATURE MANUELLE (La méthode infaillible)
+          # --force : écrase les signatures existantes
+          # --deep : signe aussi les frameworks Qt et FFmpeg à l'intérieur
+          # - : signature ad-hoc (sans certificat payant)
+          codesign --force --deep --sign - deploy/son_fusion.app
+          
+          # 4. Création du DMG avec l'outil Apple (hdiutil) au lieu de Qt
+          # Cela garantit que le fichier signé reste intact
+          hdiutil create -volname "SonFusion" -srcfolder deploy/son_fusion.app -ov -format UDZO deploy/son_fusion.dmg
+          
+          # Renommage pour l'artifact
           mv deploy/son_fusion.dmg SonFusion_macOS.dmg
-
-      - name: Upload Artifact macOS
-        uses: actions/upload-artifact@v4
-        with:
-          name: SonFusion-macOS
-          path: SonFusion_macOS.dmg
 
   # =========================================================
   # JOB LINUX (AppImage)
