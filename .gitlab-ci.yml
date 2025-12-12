@@ -1,0 +1,103 @@
+# ============================================================================
+# GitLab CI/CD Configuration pour SonFusion
+# Compilation automatique pour Windows, macOS et Linux
+# ============================================================================
+
+stages:
+  - build
+  - package
+  - release
+
+variables:
+  QT_VERSION: "6.5"
+  APP_VERSION: "2.1"
+
+
+
+# ============================================================================
+# BUILD MACOS
+# ============================================================================
+
+build:macos:
+  stage: build
+  tags:
+    - macos
+  before_script:
+    - brew install qt ffmpeg
+    - export PATH="/opt/homebrew/opt/qt/bin:$PATH"
+  script:
+    - qmake son_fusion.pro CONFIG+=release
+    - make -j$(sysctl -n hw.ncpu)
+  artifacts:
+    paths:
+      - son_fusion.app
+    expire_in: 1 week
+  only:
+    - main
+    - tags
+
+package:macos:
+  stage: package
+  tags:
+    - macos
+  dependencies:
+    - build:macos
+  before_script:
+    - brew install qt create-dmg
+    - export PATH="/opt/homebrew/opt/qt/bin:$PATH"
+  script:
+    # Créer le dossier de déploiement
+    - mkdir -p deploy_macos
+    - cp -r son_fusion.app deploy_macos/
+    
+    # Copier FFmpeg dans le bundle
+    - cp $(which ffmpeg) deploy_macos/son_fusion.app/Contents/MacOS/
+    - cp $(which ffprobe) deploy_macos/son_fusion.app/Contents/MacOS/
+    - chmod +x deploy_macos/son_fusion.app/Contents/MacOS/ffmpeg
+    - chmod +x deploy_macos/son_fusion.app/Contents/MacOS/ffprobe
+    
+    # Déployer Qt
+    - macdeployqt deploy_macos/son_fusion.app -verbose=2
+    
+    # Créer le DMG
+    - |
+      create-dmg \
+        --volname "SonFusion ${APP_VERSION}" \
+        --volicon "icones/icon.icns" \
+        --window-pos 200 120 \
+        --window-size 800 400 \
+        --icon-size 100 \
+        --icon "son_fusion.app" 200 190 \
+        --hide-extension "son_fusion.app" \
+        --app-drop-link 600 185 \
+        "SonFusion_v${APP_VERSION}_macOS.dmg" \
+        "deploy_macos/"
+  artifacts:
+    paths:
+      - SonFusion_v${APP_VERSION}_macOS.dmg
+    expire_in: 1 month
+  only:
+    - tags
+
+
+
+# ============================================================================
+# RELEASE (création automatique des releases GitLab)
+# ============================================================================
+
+release:
+  stage: release
+  image: registry.gitlab.com/gitlab-org/release-cli:latest
+  dependencies:
+    - package:macos
+  script:
+    - echo "Création de la release $CI_COMMIT_TAG"
+  release:
+    tag_name: $CI_COMMIT_TAG
+    description: "Release $CI_COMMIT_TAG de SonFusion"
+    assets:
+      links:
+        - name: "macOS (.dmg)"
+          url: "$CI_PROJECT_URL/-/jobs/artifacts/$CI_COMMIT_TAG/raw/SonFusion_v${APP_VERSION}_macOS.dmg?job=package:macos"
+  only:
+    - tags
