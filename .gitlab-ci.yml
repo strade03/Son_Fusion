@@ -1,6 +1,6 @@
 stages:
   - build
-
+ 
 variables:
   QT_VERSION: "6.5.0"
   APP_VERSION: "2.1"
@@ -35,3 +35,4 @@ build:macos:
     paths:
       - SonFusion_v${APP_VERSION}_macOS.dmg
     expire_in: 1 week
+
