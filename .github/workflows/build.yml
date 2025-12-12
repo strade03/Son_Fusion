@@ -1,41 +1,42 @@
-name: Build & Release macOS
+name: Build macOS
 
 on:
   push:
     branches: [ main ]
-    tags:
-      - 'v*'  # Se déclenche quand tu crées un tag (ex: v1.0)
   pull_request:
     branches: [ main ]
 
-permissions:
-  contents: write  # Nécessaire pour créer la release
-
 jobs:
-  # ==========================================================================
-  # JOB 1 : COMPILATION ET CRÉATION DU DMG
-  # ==========================================================================
-  build-macos:
+  build:
+    name: Build on macOS
+    # On force macos-13 (Intel) pour plus de compatibilité si tu ne veux pas gérer l'ARM tout de suite
+    # Sinon utilise 'macos-latest' pour les puces M1/M2/M3
     runs-on: macos-latest
+    
     steps:
       - name: Checkout du code
         uses: actions/checkout@v4
 
-      # Utiliser une action dédiée pour Qt est plus stable que "brew install qt"
       - name: Installation de Qt
         uses: jurplel/install-qt-action@v3
         with:
-          version: '6.5.0'
+          # On passe à 6.6.2 qui est plus stable sur les Mac récents
+          version: '6.6.2'
           host: 'mac'
           target: 'desktop'
-      
-      # On installe FFmpeg proprement via Homebrew sur la machine de build
-      - name: Installation de FFmpeg
-        run: brew install ffmpeg
+          # IMPORTANT : On installe les modules audio/vidéo
+          modules: 'qtmultimedia qt5compat'
+          
+      - name: Installation de FFmpeg (via Homebrew)
+        run: |
+          brew update
+          brew install ffmpeg
 
       - name: Compilation (Build)
         run: |
+          # Création du Makefile
           qmake son_fusion.pro CONFIG+=release
+          # Compilation
           make -j$(sysctl -n hw.ncpu)
 
       - name: Création du paquet (Deploy)
@@ -47,60 +48,23 @@ jobs:
           # Préparer les dossiers dans le .app
           mkdir -p deploy/son_fusion.app/Contents/MacOS
           
-          # Copier FFmpeg et FFprobe depuis l'installation Homebrew
-          FFMPEG_DIR=$(brew --prefix ffmpeg)/bin
-          cp "$FFMPEG_DIR/ffmpeg" deploy/son_fusion.app/Contents/MacOS/
-          cp "$FFMPEG_DIR/ffprobe" deploy/son_fusion.app/Contents/MacOS/
+          # Trouver où brew a installé ffmpeg et le copier
+          FFMPEG_BIN=$(brew --prefix ffmpeg)/bin
+          cp "$FFMPEG_BIN/ffmpeg" deploy/son_fusion.app/Contents/MacOS/
+          cp "$FFMPEG_BIN/ffprobe" deploy/son_fusion.app/Contents/MacOS/
           
           # Rendre exécutable
           chmod +x deploy/son_fusion.app/Contents/MacOS/ffmpeg
           chmod +x deploy/son_fusion.app/Contents/MacOS/ffprobe
           
-          # Utiliser macdeployqt pour créer le DMG final
+          # Utiliser l'outil Qt pour finir le travail (libs + dmg)
           macdeployqt deploy/son_fusion.app -dmg -verbose=2
           
-          # Renommer le fichier pour qu'il soit propre
-          # Si c'est un tag, on utilise le tag, sinon "latest"
-          if [[ $GITHUB_REF_TYPE == 'tag' ]]; then
-             VERSION=${GITHUB_REF_NAME}
-          else
-             VERSION="latest"
-          fi
-          mv deploy/son_fusion.dmg SonFusion_macOS_${VERSION}.dmg
+          # Renommer pour être clair
+          mv deploy/son_fusion.dmg SonFusion_macOS.dmg
 
-      - name: Upload Artifact (Stockage temporaire)
+      - name: Sauvegarder le DMG (Artifact)
         uses: actions/upload-artifact@v4
         with:
-          name: SonFusion-macOS-DMG
-          path: SonFusion_macOS_*.dmg
-          retention-days: 5
-
-  # ==========================================================================
-  # JOB 2 : CRÉATION DE LA RELEASE (Uniquement si tag v*)
-  # ==========================================================================
-  release:
-    needs: build-macos
-    if: startsWith(github.ref, 'refs/tags/')
-    runs-on: ubuntu-latest
-    steps:
-      - name: Télécharger le DMG créé précédemment
-        uses: actions/download-artifact@v4
-        with:
-          name: SonFusion-macOS-DMG
-
-      - name: Créer la Release GitHub
-        uses: softprops/action-gh-release@v2
-        with:
-          files: |
-            *.dmg
-          body: |
-            ## Nouvelle version : ${{ github.ref_name }}
-            Compilation automatique macOS.
-            
-            ### Installation
-            1. Téléchargez le `.dmg` ci-dessous.
-            2. Glissez l'application dans votre dossier Applications.
-            
-            *Note: FFmpeg est inclus dans cette version.*
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          name: SonFusion-macOS
+          path: SonFusion_macOS.dmg
