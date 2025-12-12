@@ -61,7 +61,7 @@ jobs:
           
           # MacDeployQt crée le bundle autonome + le DMG
           # macdeployqt deploy/son_fusion.app -dmg -verbose=2
-          macdeployqt deploy/son_fusion.app -dmg -verbose=2 -sign -
+          macdeployqt deploy/son_fusion.app -dmg -verbose=2 -sign=-
           
           mv deploy/son_fusion.dmg SonFusion_macOS.dmg
 
