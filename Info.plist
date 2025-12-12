@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!-- Nom de l'exécutable -->
+    <key>CFBundleExecutable</key>
+    <string>son_fusion</string>
+    
+    <!-- Icône de l'application -->
+    <key>CFBundleIconFile</key>
+    <string>icon.icns</string>
+    
+    <!-- Identifiant unique de l'application (format reverse-DNS) -->
+    <key>CFBundleIdentifier</key>
+    <string>com.sonfusion.app</string>
+    
+    <!-- Nom interne du bundle -->
+    <key>CFBundleName</key>
+    <string>SonFusion</string>
+    
+    <!-- Nom affiché dans le Finder et le Dock -->
+    <key>CFBundleDisplayName</key>
+    <string>Son Fusion</string>
+    
+    <!-- Version du build (incrémentée à chaque compilation) -->
+    <key>CFBundleVersion</key>
+    <string>2.1</string>
+    
+    <!-- Version affichée à l'utilisateur -->
+    <key>CFBundleShortVersionString</key>
+    <string>2.1</string>
+    
+    <!-- Type de package (APPL = Application) -->
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    
+    <!-- Version minimale de macOS requise -->
+    <key>LSMinimumSystemVersion</key>
+    <string>10.15</string>
+    
+    <!-- Support de la haute résolution (Retina) -->
+    <key>NSHighResolutionCapable</key>
+    <true/>
+    
+    <!-- Support du basculement automatique entre GPU intégré et dédié -->
+    <key>NSSupportsAutomaticGraphicsSwitching</key>
+    <true/>
+    
+    <!-- Copyright -->
+    <key>NSHumanReadableCopyright</key>
+    <string>Copyright © 2025 SonFusion. Tous droits réservés.</string>
+    
+    <!-- Types de fichiers supportés -->
+    <key>CFBundleDocumentTypes</key>
+    <array>
+        <!-- Fichiers WAV -->
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Fichier audio WAV</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>com.microsoft.waveform-audio</string>
+                <string>public.audio</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Default</string>
+        </dict>
+        
+        <!-- Fichiers MP3 -->
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Fichier audio MP3</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.mp3</string>
+                <string>public.audio</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Default</string>
+        </dict>
+        
+        <!-- Fichiers FLAC -->
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Fichier audio FLAC</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.xiph.flac</string>
+                <string>public.audio</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Default</string>
+        </dict>
+        
+        <!-- Fichiers M4A -->
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Fichier audio M4A</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>public.mpeg-4-audio</string>
+                <string>public.audio</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Default</string>
+        </dict>
+        
+        <!-- Fichiers OGG -->
+        <dict>
+            <key>CFBundleTypeName</key>
+            <string>Fichier audio OGG</string>
+            <key>CFBundleTypeRole</key>
+            <string>Editor</string>
+            <key>LSItemContentTypes</key>
+            <array>
+                <string>org.xiph.ogg-audio</string>
+                <string>public.audio</string>
+            </array>
+            <key>LSHandlerRank</key>
+            <string>Default</string>
+        </dict>
+    </array>
+    
+    <!-- Catégorie de l'application (pour App Store) -->
+    <key>LSApplicationCategoryType</key>
+    <string>public.app-category.music</string>
+    
+    <!-- Nom principal de l'application (utilisé par Siri, Spotlight) -->
+    <key>CFBundleSpokenName</key>
+    <string>Son Fusion</string>
+    
+    <!-- Permissions (si nécessaire pour macOS 10.14+) -->
+    
+    <!-- Accès aux fichiers (macOS 10.15+) -->
+    <key>NSDesktopFolderUsageDescription</key>
+    <string>Son Fusion a besoin d'accéder à vos fichiers pour ouvrir et sauvegarder des fichiers audio.</string>
+    
+    <key>NSDocumentsFolderUsageDescription</key>
+    <string>Son Fusion a besoin d'accéder à vos documents pour ouvrir et sauvegarder des fichiers audio.</string>
+    
+    <key>NSDownloadsFolderUsageDescription</key>
+    <string>Son Fusion a besoin d'accéder à vos téléchargements pour ouvrir des fichiers audio.</string>
+    
+    <!-- Support du mode sombre -->
+    <key>NSRequiresAquaSystemAppearance</key>
+    <false/>
+    
+    <!-- L'application est compatible avec les écrans externes -->
+    <key>UIRequiresFullScreen</key>
+    <false/>
+    
+    <!-- Désactiver App Nap pour maintenir les performances -->
+    <key>NSAppSleepDisabled</key>
+    <true/>
+</dict>
+</plist>
