@@ -1,4 +1,4 @@
-name: Build macOS
+name: Build Multi-Platform
 
 on:
   push:
@@ -7,10 +7,11 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Build on macOS
-    # On force macos-13 (Intel) pour plus de compatibilité si tu ne veux pas gérer l'ARM tout de suite
-    # Sinon utilise 'macos-latest' pour les puces M1/M2/M3
+  # =========================================================
+  # JOB MACOS (Celui que tu avais déjà, légèrement optimisé)
+  # =========================================================
+  build-macos:
+    name: Build macOS
     runs-on: macos-latest
     
     steps:
@@ -20,51 +21,112 @@ jobs:
       - name: Installation de Qt
         uses: jurplel/install-qt-action@v3
         with:
-          # On passe à 6.6.2 qui est plus stable sur les Mac récents
           version: '6.6.2'
           host: 'mac'
           target: 'desktop'
-          # IMPORTANT : On installe les modules audio/vidéo
           modules: 'qtmultimedia qt5compat'
           
-      - name: Installation de FFmpeg (via Homebrew)
+      - name: Installation de FFmpeg
         run: |
           brew update
           brew install ffmpeg
 
-      - name: Compilation (Build)
+      - name: Compilation
         run: |
-          # Création du Makefile
           qmake son_fusion.pro CONFIG+=release
-          # Compilation
           make -j$(sysctl -n hw.ncpu)
 
-      - name: Création du paquet (Deploy)
+      - name: Création du DMG
         run: |
-          # Créer dossier temporaire
           mkdir -p deploy
           cp -r son_fusion.app deploy/
           
-          # Préparer les dossiers dans le .app
           mkdir -p deploy/son_fusion.app/Contents/MacOS
           
-          # Trouver où brew a installé ffmpeg et le copier
+          # Copie de FFmpeg installé par Brew
           FFMPEG_BIN=$(brew --prefix ffmpeg)/bin
           cp "$FFMPEG_BIN/ffmpeg" deploy/son_fusion.app/Contents/MacOS/
           cp "$FFMPEG_BIN/ffprobe" deploy/son_fusion.app/Contents/MacOS/
           
-          # Rendre exécutable
           chmod +x deploy/son_fusion.app/Contents/MacOS/ffmpeg
           chmod +x deploy/son_fusion.app/Contents/MacOS/ffprobe
           
-          # Utiliser l'outil Qt pour finir le travail (libs + dmg)
           macdeployqt deploy/son_fusion.app -dmg -verbose=2
-          
-          # Renommer pour être clair
           mv deploy/son_fusion.dmg SonFusion_macOS.dmg
 
-      - name: Sauvegarder le DMG (Artifact)
+      - name: Upload Artifact macOS
         uses: actions/upload-artifact@v4
         with:
           name: SonFusion-macOS
           path: SonFusion_macOS.dmg
+
+  # =========================================================
+  # JOB LINUX (Nouveau !)
+  # =========================================================
+  build-linux:
+    name: Build Linux (AppImage)
+    # Ubuntu 22.04 est un bon compromis pour la compatibilité (Debian 11+, etc.)
+    runs-on: ubuntu-22.04 
+    
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.2'
+          host: 'linux'
+          target: 'desktop'
+          modules: 'qtmultimedia qt5compat'
+
+      - name: Installation des dépendances Linux
+        run: |
+          sudo apt-get update
+          # Installation des libs graphiques, audio et FFmpeg
+          sudo apt-get install -y build-essential libgl1-mesa-dev libxkbcommon-x11-0 \
+            libpulse-dev libasound2-dev libgstreamer-plugins-base1.0-dev \
+            libgstreamer-plugins-good1.0-0 libgstreamer-plugins-bad1.0-0 \
+            ffmpeg libxcb-cursor0
+
+      - name: Compilation
+        run: |
+          qmake son_fusion.pro CONFIG+=release
+          make -j$(nproc)
+
+      - name: Création de l'AppImage
+        run: |
+          # 1. Télécharger l'outil linuxdeployqt
+          wget https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt-continuous-x86_64.AppImage
+
+          # 2. Préparer le dossier pour l'AppImage
+          # On crée un fichier .desktop temporaire nécessaire pour l'AppImage
+          cat > default.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=SonFusion
+          Exec=son_fusion
+          Icon=default
+          Categories=AudioVideo;Audio;
+          EOF
+          
+          # On a besoin d'une icône par défaut (on en crée une fausse si tu n'en as pas)
+          touch default.png
+
+          # 3. Lancer le déploiement
+          # On unset QT_PLUGIN_PATH pour éviter les conflits avec le système
+          unset QT_PLUGIN_PATH
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+          
+          # Note: -unsupported-allow-new-glibc est souvent nécessaire sur les GitHub Runners récents
+          ./linuxdeployqt-continuous-x86_64.AppImage ./son_fusion -appimage -unsupported-allow-new-glibc -extra-plugins=iconengines,platformthemes
+
+          # 4. Renommer le fichier de sortie
+          mv SonFusion-*.AppImage SonFusion_Linux.AppImage
+
+      - name: Upload Artifact Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonFusion-Linux
+          path: SonFusion_Linux.AppImage
