@@ -83,33 +83,6 @@ win32 {
     # Icône de l'application Windows
     RC_ICONS = icones/fusionner.ico
     
-    # Copier FFmpeg.exe et FFprobe.exe dans le dossier de sortie
-    CONFIG(debug, debug|release) {
-        DEST_DIR = $$OUT_PWD/debug
-    } else {
-        DEST_DIR = $$OUT_PWD/release
-    }
-    
-    # Copier FFmpeg
-    exists($$PWD/bin/windows/ffmpeg.exe) {
-        QMAKE_POST_LINK += $$QMAKE_COPY $$shell_quote($$PWD/bin/windows/ffmpeg.exe) $$shell_quote($$DEST_DIR) $$escape_expand(\n\t)
-        message("FFmpeg.exe sera copié dans le dossier de build")
-    } else {
-        warning("FFmpeg.exe non trouvé dans bin/windows/")
-    }
-    
-    # Copier FFprobe
-    exists($$PWD/bin/windows/ffprobe.exe) {
-        QMAKE_POST_LINK += $$QMAKE_COPY $$shell_quote($$PWD/bin/windows/ffprobe.exe) $$shell_quote($$DEST_DIR) $$escape_expand(\n\t)
-        message("FFprobe.exe sera copié dans le dossier de build")
-    } else {
-        warning("FFprobe.exe non trouvé dans bin/windows/")
-    }
-    
-    # Copier le dossier icones
-    exists($$PWD/icones) {
-        QMAKE_POST_LINK += $$QMAKE_COPY_DIR $$shell_quote($$PWD/icones) $$shell_quote($$DEST_DIR/icones) $$escape_expand(\n\t)
-    }
     
     message("Configuration Windows activée")
 }
