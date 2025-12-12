@@ -74,6 +74,12 @@ jobs:
           # Renommage pour l'artifact
           mv deploy/son_fusion.dmg SonFusion_macOS.dmg
 
+      - name: Upload Artifact macOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonFusion-macOS
+          path: SonFusion_macOS.dmg
+
   # =========================================================
   # JOB LINUX (AppImage)
   # =========================================================
