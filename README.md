@@ -4,28 +4,26 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows_|_macOS_|_Linux-lightgrey.svg)
 [![Qt](https://img.shields.io/badge/Built%20with-Qt6-green.svg)](https://www.qt.io/)
 
-**Son Fusion** est une application gratuite et open-source permettant de fusionner, d'enregistrer et d'éditer simplement vos fichiers audio. Idéal pour les projets scolaires, les webradios, les podcasts ou les interviews.
- **[Présentation de l'application](https://estrade03.forge.apps.education.fr/son_fusion/index.html)**
+**Son Fusion** est une application gratuite et open-source permettant de fusionner et d'éditer simplement vos fichiers audio. Idéal pour les projets scolaires, les webradios, les podcasts ou les interviews.
+ 
     
 | Fenêtre Principale | Éditeur Audio |
 |:------------------:|:-------------:|
-| ![Capture 1](https://estrade03.forge.apps.education.fr/son_fusion/img/capture1.jpg) | ![Capture 2](https://estrade03.forge.apps.education.fr/son_fusion/img/capture2.jpg) |
-
-  
+| ![Capture 1](https://estrade03.forge.apps.education.fr/son_fusion/img/capture1.jpg) | <img src="https://estrade03.forge.apps.education.fr/son_fusion/img/capture2.jpg" width="70%"> <img src="https://estrade03.forge.apps.education.fr/son_fusion/img/capture3.jpg" width="30%"> |
 
 ## 📥 Téléchargements
 
 Choisissez la version correspondant à votre système d'exploitation :
 
 ### 🪟 Windows
-👉 **[Télécharger Son Fusion pour Windows](https://forge.apps.education.fr/estrade03/son_fusion/-/raw/main/dist/SonFusion_Setup_2.1.exe)**
+👉 **[Télécharger Son Fusion pour Windows](https://forge.apps.education.fr/estrade03/son_fusion/-/raw/main/dist/SonFusion_Setup_2.2.exe)**
 
 > ⚠️ **Important :** L'application n'étant pas signée numériquement (certificat payant), Windows peut afficher un écran bleu "Windows a protégé votre ordinateur" (SmartScreen).
 > *   Cliquez sur **"Informations complémentaires"**.
 > *   Puis cliquez sur le bouton **"Exécuter quand même"**.
 
 ### 🍎 macOS
-👉 **[Télécharger Son Fusion pour macOS](https://forge.apps.education.fr/estrade03/son_fusion/-/raw/main/dist/SonFusion_macOS_2.1.dmg?ref_type=heads)**
+👉 **[Télécharger Son Fusion pour macOS](https://forge.apps.education.fr/estrade03/son_fusion/-/raw/main/dist/SonFusion_macOS_2.2.dmg?ref_type=heads)**
 
 > ⚠️ **Important :** Au premier lancement, Apple bloquera l'application car le développeur n'est pas identifié.
 > *   Faites un **Clic-Droit** (ou `Ctrl` + Clic) sur l'icône de l'application.
@@ -33,14 +31,14 @@ Choisissez la version correspondant à votre système d'exploitation :
 > *   Cliquez à nouveau sur **Ouvrir** dans la fenêtre de dialogue qui apparaît.
 
 ### 🐧 Linux (Ubuntu/Debian)
-👉 **[Télécharger Son Fusion pour Linux](https://forge.apps.education.fr/estrade03/son_fusion/-/raw/main/dist/SonFusion_Linux_2.1?ref_type=heads)**
+👉 **[Télécharger Son Fusion pour Linux](https://forge.apps.education.fr/estrade03/son_fusion/-/raw/main/dist/SonFusion_Linux_2.2?ref_type=heads)**
 
 > ⚠️ **Prérequis :** Vous devez installer **FFmpeg** pour que l'application fonctionne correctement (traitement audio).
 > Ouvrez un terminal et lancez la commande suivante :
 > ```bash
 > sudo apt install ffmpeg
 > ```
-> *Note : Pensez à rendre le fichier téléchargé exécutable (Clic-droit > Propriétés > Permissions > Autoriser l'exécution ou `chmod +x SonFusion_Linux._2.1`).*
+> *Note : Pensez à rendre le fichier téléchargé exécutable (Clic-droit > Propriétés > Permissions > Autoriser l'exécution ou `chmod +x SonFusion_Linux_2.1`).*
 
 ## 🚀 Fonctionnalités
 
@@ -68,30 +66,6 @@ Cette application a été conçue pour simplifier le traitement audio par lots :
     *   *Conseil :* Nommez vos fichiers en les numérotant (ex: `01.Intro.mp3`, `02.Corps.mp3`) pour un tri automatique.
 3.  **Éditer (Optionnel)** : Double-cliquez ou sélectionnez "Éditer" pour couper des silences ou normaliser le volume.
 4.  **Fusionner** : Choisissez le format de sortie (MP3, WAV, etc.) et cliquez sur le bouton de fusion.
-
-## 🛠️ Installation et Compilation (Pour les développeurs)
-
-Si vous souhaitez compiler le code source vous-même :
-
-### Prérequis
-*   **Qt 6** (Core, Gui, Widgets, Multimedia)
-*   Compilateur C++ compatible (MSVC, MinGW, GCC, Clang)
-*   **FFmpeg** : Les exécutables `ffmpeg` et `ffprobe` sont nécessaires au fonctionnement du programme (dans le PATH ou dossier de l'exécutable).
-
-### Instructions
-1.  Clonez ce dépôt :
-    ```bash
-    git clone https://github.com/votre-nom/son-fusion.git
-    ```
-2.  Ouvrez le projet dans **Qt Creator**.
-3.  Configurez le kit de compilation.
-4.  Compilez et exécutez.
-
-## ⚠️ Note sur FFmpeg
-
-Son Fusion s'appuie sur **FFmpeg** pour le décodage et l'encodage des formats compressés (MP3, AAC, etc.).
-*   Si `ffmpeg` est détecté, tous les formats sont supportés.
-*   Si `ffmpeg` est absent, l'application fonctionnera en mode restreint (fichiers WAV uniquement).
 
 ## 📄 Licence
 
