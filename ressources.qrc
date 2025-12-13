@@ -1,0 +1,26 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icones/bouton vierge.png</file>
+        <file>icones/couper.png</file>
+        <file>icones/delete.png</file>
+        <file>icones/down.png</file>
+        <file>icones/duplicate.png</file>
+        <file>icones/edit.png</file>
+        <file>icones/exit.png</file>
+        <file>icones/fusionner.ico</file>
+        <file>icones/fusionner.png</file>
+        <file>icones/icon.icns</file>
+        <file>icones/info.png</file>
+        <file>icones/normalise.png</file>
+        <file>icones/normaliser.png</file>
+        <file>icones/open-folder.png</file>
+        <file>icones/pause.png</file>
+        <file>icones/play.png</file>
+        <file>icones/reset.png</file>
+        <file>icones/save.png</file>
+        <file>icones/stop.png</file>
+        <file>icones/up.png</file>
+        <file>icones/zoom+.png</file>
+        <file>icones/zoom-.png</file>
+    </qresource>
+</RCC>

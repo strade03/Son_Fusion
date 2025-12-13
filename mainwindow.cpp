@@ -84,7 +84,7 @@ void MainWindow::createUI() {
     QHBoxLayout* folderLayout = new QHBoxLayout();
 
     QPushButton* openDirButton = new QPushButton(this);
-    openDirButton->setIcon(QIcon("icones/open-folder.png"));
+    openDirButton->setIcon(QIcon(":/icones/open-folder.png"));
     openDirButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     openDirButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE); // Taille fixe pour le bouton
     connect(openDirButton, &QPushButton::clicked, this, &MainWindow::selectDirectory);
@@ -137,7 +137,7 @@ void MainWindow::createUI() {
     QHBoxLayout* topButtonsLayout = new QHBoxLayout();
 
     playButton = new QPushButton(this);
-    playButton->setIcon(QIcon("icones/play.png"));
+    playButton->setIcon(QIcon(":/icones/play.png"));
     playButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     playButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     playButton->setEnabled(false);
@@ -145,7 +145,7 @@ void MainWindow::createUI() {
     topButtonsLayout->addWidget(playButton);
 
     deleteButton = new QPushButton(this);
-    deleteButton->setIcon(QIcon("icones/delete.png"));
+    deleteButton->setIcon(QIcon(":/icones/delete.png"));
     deleteButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     deleteButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     deleteButton->setEnabled(false);
@@ -157,7 +157,7 @@ void MainWindow::createUI() {
     QHBoxLayout* middleButtonsLayout = new QHBoxLayout();
     // Boutons Edition
     editButton = new QPushButton(this);
-    editButton->setIcon(QIcon("icones/edit.png"));
+    editButton->setIcon(QIcon(":/icones/edit.png"));
     editButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     editButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     editButton->setEnabled(false);
@@ -166,7 +166,7 @@ void MainWindow::createUI() {
 
     // Ajouter un espace plus important entre les deux groupes de boutons
     copieButton = new QPushButton(this);
-    copieButton->setIcon(QIcon("icones/duplicate.png"));
+    copieButton->setIcon(QIcon(":/icones/duplicate.png"));
     copieButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     copieButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     copieButton->setEnabled(false);
@@ -179,7 +179,7 @@ void MainWindow::createUI() {
 
     // Boutons monter et descendre
     upButton = new QPushButton(this);
-    upButton->setIcon(QIcon("icones/up.png"));
+    upButton->setIcon(QIcon(":/icones/up.png"));
     upButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     upButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     upButton->setEnabled(false);
@@ -187,7 +187,7 @@ void MainWindow::createUI() {
     controlLayout->addWidget(upButton);
 
     downButton = new QPushButton(this);
-    downButton->setIcon(QIcon("icones/down.png"));
+    downButton->setIcon(QIcon(":/icones/down.png"));
     downButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     downButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     downButton->setEnabled(false);
@@ -241,7 +241,7 @@ void MainWindow::createUI() {
     fusionLayout->addWidget(outputFormatCombo);
 
     QPushButton* fusionButton = new QPushButton(this);
-    fusionButton->setIcon(QIcon("icones/fusionner.png"));
+    fusionButton->setIcon(QIcon(":/icones/fusionner.png"));
     fusionButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     fusionButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE); // Taille fixe
     connect(fusionButton, &QPushButton::clicked, this, &MainWindow::mergeFiles);
@@ -249,14 +249,14 @@ void MainWindow::createUI() {
 
     // Ajouter les boutons info et quitter
     QPushButton* infoButton = new QPushButton(this);
-    infoButton->setIcon(QIcon("icones/info.png"));
+    infoButton->setIcon(QIcon(":/icones/info.png"));
     infoButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     infoButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE); // Taille fixe
     connect(infoButton, &QPushButton::clicked, this, &MainWindow::showInfo);
     fusionLayout->addWidget(infoButton);
 
     QPushButton* quitButton = new QPushButton(this);
-    quitButton->setIcon(QIcon("icones/exit.png"));
+    quitButton->setIcon(QIcon(":/icones/exit.png"));
     quitButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     quitButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE); // Taille fixe
     connect(quitButton, &QPushButton::clicked, this, &MainWindow::close);
@@ -309,7 +309,7 @@ void MainWindow::showInfo() {
 void MainWindow::onPlaybackStateChanged(QMediaPlayer::PlaybackState state) {
     if (state == QMediaPlayer::StoppedState) {
         // La lecture est terminée, remettre l'icône de lecture
-        playButton->setIcon(QIcon("icones/play.png"));
+        playButton->setIcon(QIcon(":/icones/play.png"));
         isPlaying = false;
     }
 }
@@ -385,7 +385,7 @@ void MainWindow::playSelectedFile() {
 
     if (isPlaying) {
         mediaPlayer->stop();
-        playButton->setIcon(QIcon("icones/play.png"));
+        playButton->setIcon(QIcon(":/icones/play.png"));
         isPlaying = false;
     } else {
         QString fileName = fileListWidget->currentItem()->text();
@@ -393,7 +393,7 @@ void MainWindow::playSelectedFile() {
        // QMessageBox::information(this, "Fusion", tr("%1").arg(fileName));
         mediaPlayer->setSource(QUrl::fromLocalFile(filePath));
         mediaPlayer->play();
-        playButton->setIcon(QIcon("icones/stop.png"));
+        playButton->setIcon(QIcon(":/icones/stop.png"));
         isPlaying = true;
     }
 }
@@ -534,7 +534,7 @@ void MainWindow::editSelectedFile() {
     // Arrêter la lecture si elle est en cours
     if (isPlaying) {
         mediaPlayer->stop();
-        playButton->setIcon(QIcon("icones/play.png"));
+        playButton->setIcon(QIcon(":/icones/play.png"));
         isPlaying = false;
     }
 

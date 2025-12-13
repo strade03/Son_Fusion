@@ -549,10 +549,10 @@ bool AudioEditor::writeWavFromFloatBuffer(const QString &filename)
 void AudioEditor::playPause()
 {
     if (player->playbackState() == QMediaPlayer::PlayingState) {
-        ui->btnPlay->setIcon(QIcon("icones/play.png"));
+        ui->btnPlay->setIcon(QIcon(":/icones/play.png"));
         player->pause();
     } else {
-        ui->btnPlay->setIcon(QIcon("icones/pause.png"));
+        ui->btnPlay->setIcon(QIcon(":/icones/pause.png"));
 
         if (player->playbackState() == QMediaPlayer::StoppedState) {
             int s = waveformWidget->getSelectionStart();
@@ -578,7 +578,7 @@ void AudioEditor::stopPlayback()
 
     ui->btnStop->setEnabled(false);
     if (!waveformWidget->hasSelection()) ui->btnNormalizeAll->setEnabled(true);
-    ui->btnPlay->setIcon(QIcon("icones/play.png"));
+    ui->btnPlay->setIcon(QIcon(":/icones/play.png"));
 
     const qint64 startposition = waveformWidget->getSelectionStart();
     qint64 targetPos = (startposition > 0) ? startposition : 0;
@@ -625,7 +625,7 @@ void AudioEditor::handleMediaStatusChanged(QMediaPlayer::MediaStatus status)
     if (status == QMediaPlayer::EndOfMedia) {
         qint64 pos = waveformWidget->hasSelection() ? waveformWidget->getSelectionStart() : 0;
         waveformWidget->setPlayheadPosition(pos);
-        ui->btnPlay->setIcon(QIcon("icones/play.png"));
+        ui->btnPlay->setIcon(QIcon(":/icones/play.png"));
         ui->btnStop->setEnabled(false);
     }
 }
