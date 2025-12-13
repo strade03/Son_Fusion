@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QTimer>
+#include <QSlider>
 
 class AudioRecorder : public QDialog
 {
@@ -37,6 +38,7 @@ private:
     QLabel *statusLabel;
     QPushButton *recordButton;
     QComboBox *deviceCombo;
+    QSlider *volumeSlider;
     
     QTimer *timer;
     qint64 durationSec;

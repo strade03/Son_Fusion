@@ -9,6 +9,7 @@
 #include <QWidget>
 #include <QCloseEvent>
 
+
 namespace Ui {
     class AudioEditorWidget;
 }
@@ -31,6 +32,7 @@ public:
     explicit AudioEditor(QWidget *parent = nullptr);
     explicit AudioEditor(const QString &filePath, const QString &workingDir, QWidget *parent, bool isTempRecording = false);
     ~AudioEditor();
+    QString getCurrentFilePath() const { return currentAudioFile; }
     bool isContentModified() const { return isModified; }
 private slots:
     void openFile();

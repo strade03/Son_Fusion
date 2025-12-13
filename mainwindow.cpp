@@ -188,7 +188,7 @@ void MainWindow::createUI() {
 
     controlLayout->addLayout(bottomButtonsLayout);
 
-    controlLayout->addSpacing(40);
+    controlLayout->addSpacing(30);
 
     // Boutons monter et descendre
     upButton = new QPushButton(this);
@@ -294,15 +294,28 @@ void MainWindow::openRecorder() {
         QString recordedFile = recorderDialog.getRecordedFilePath();
         
         if (QFile::exists(recordedFile)) {
-            // CORRECTION : On passe 'currentPath' en 2ème argument
             AudioEditor editor(recordedFile, currentPath, this, true);
             
+            // On lance l'éditeur
             int result = editor.exec();
             
-            if (result == QDialog::Accepted || !editor.isContentModified()) {
-                 updateFileList();
+            // On vérifie simplement si le fichier final existe dans le dossier courant
+            QString finalPath = editor.getCurrentFilePath();
+            QFileInfo fi(finalPath);
+            
+            // Condition : L'utilisateur a bien sauvegardé le fichier dans le dossier de travail
+            if (fi.exists() && fi.absolutePath() == QDir(currentPath).absolutePath() && finalPath != recordedFile) {
+                
+                // On crée l'item
+                QListWidgetItem* newItem = new QListWidgetItem(fi.fileName());
+                // On l'ajoute à la fin
+                fileListWidget->addItem(newItem);
+                // On le sélectionne pour montrer à l'utilisateur où il est
+                fileListWidget->setCurrentItem(newItem);
+                // --------------------------------------------
             }
             
+            // Nettoyage du fichier brut temporaire (rec_xxx.wav)
             QFile::remove(recordedFile);
         }
     }
