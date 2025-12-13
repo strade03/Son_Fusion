@@ -12,7 +12,6 @@
 #include <QCoreApplication>
 #include <cmath>
 #include <cstring>
-#include <QInputDialog>
 
 #include <QDialog>
 #include <QVBoxLayout>
@@ -749,3 +748,4 @@ void AudioEditor::closeEvent(QCloseEvent *event)
     releaseResources();
     AUDIOEDITOR_BASE::closeEvent(event);
 }
+
