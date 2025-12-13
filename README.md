@@ -1,12 +1,5 @@
 # Son Fusion
 
-Version courante 2.1
-Espace de depot pour la compilation
-Avec le script qui compile automatiquement en version Mac, Linux et Windows
-Une fois compilé, le fichier se trouve dans Actions, cliquer sur le dernier workflow =
-en bas de page il y a le lien pour le télécharger.
-
-
 [![License: GPL](https://img.shields.io/badge/License-GPL-blue.svg)](LICENSE)
 ![Platform](https://img.shields.io/badge/Platform-Windows_|_macOS_|_Linux-lightgrey.svg)
 [![Qt](https://img.shields.io/badge/Built%20with-Qt6-green.svg)](https://www.qt.io/)
