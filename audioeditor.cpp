@@ -12,7 +12,15 @@
 #include <QCoreApplication>
 #include <cmath>
 #include <cstring>
+#include <QInputDialog>
 
+#include <QDialog>
+#include <QVBoxLayout>
+#include <QLabel>
+#include <QLineEdit>
+#include <QDialogButtonBox>
+
+  
 // ============================================================================
 // CONFIGURATION MULTIPLATEFORME FFMPEG
 // ============================================================================
@@ -436,22 +444,55 @@ void AudioEditor::saveModifiedAudio()
     QString targetFile;
 
     if (isTempRecording) {
-        // 1. Générer le nom par défaut
+        // 1. Générer un nom par défaut
         QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
-        QString defaultName = QString("Enregistrement_%1.wav").arg(timeStamp);
+        QString defaultName = QString("Enregistrement_%1").arg(timeStamp);
         
-        QString defaultPath = QDir(workingDirectory).filePath(defaultName);
+        QDialog dialog(this);
+        dialog.setWindowTitle(tr("Sauvegarder l'enregistrement"));
         
-        // 3. Ouvrir la boite de dialogue "Enregistrer sous" pré-remplie
-        targetFile = QFileDialog::getSaveFileName(this, 
-            tr("Enregistrer l'enregistrement"), 
-            defaultPath, // <--- On propose ce chemin par défaut
-            tr("Fichier Audio WAV (*.wav)"));
+        QVBoxLayout *layout = new QVBoxLayout(&dialog);
+        
+        QLabel *label = new QLabel(tr("Nom du fichier :"), &dialog);
+        layout->addWidget(label);
+        
+        QLineEdit *lineEdit = new QLineEdit(&dialog);
+        lineEdit->setText(defaultName);
+        layout->addWidget(lineEdit);
+        
+        QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+        layout->addWidget(buttons);
+        
+        connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+        connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        
+        // ICI, le redimensionnement fonctionnera parfaitement car c'est votre layout
+        dialog.resize(280, dialog.height()); 
+        
+        bool ok = (dialog.exec() == QDialog::Accepted);
+        QString fileName = lineEdit->text();
+        
+        if (!ok || fileName.isEmpty()) return; // Annulation
+        
+        // 2. S'assurer de l'extension .wav
+        if (!fileName.endsWith(".wav", Qt::CaseInsensitive)) {
+            fileName += ".wav";
+        }
 
-        // 4. Si l'utilisateur annule, on sort
-        if (targetFile.isEmpty()) return;
+        // 3. Construire le chemin complet dans le dossier de travail
+        targetFile = QDir(workingDirectory).filePath(fileName);
+
+        // 4. Vérifier l'écrasement
+        if (QFile::exists(targetFile)) {
+            QMessageBox::StandardButton reply = QMessageBox::question(this, 
+                tr("Fichier existant"),
+                tr("Le fichier '%1' existe déjà.\nVoulez-vous l'écraser ?").arg(fileName),
+                QMessageBox::Yes | QMessageBox::No);
+            
+            if (reply != QMessageBox::Yes) return;
+        }
         
-    } else {      
+    } else {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Confirmer la sauvegarde"));
         msgBox.setText(tr("Voulez-vous vraiment enregistrer les modifications sur ce fichier audio ? "
