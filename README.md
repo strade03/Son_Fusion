@@ -5,7 +5,7 @@
 [![Qt](https://img.shields.io/badge/Built%20with-Qt6-green.svg)](https://www.qt.io/)
 
 **Son Fusion** est une application gratuite et open-source permettant de fusionner et d'éditer simplement vos fichiers audio. Idéal pour les projets scolaires, les webradios, les podcasts ou les interviews.
- 
+ **[Présentation de l'application](https://estrade03.forge.apps.education.fr/son_fusion/index.html)**
     
 | Fenêtre Principale | Éditeur Audio |
 |:------------------:|:-------------:|
