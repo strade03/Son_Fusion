@@ -34,7 +34,7 @@ HEADERS += \
 FORMS += \
     audioeditor.ui
 
-RESOURCES += resources.qrc
+RESOURCES += ressources.qrc
 # ============================================================================
 # CONFIGURATION MACOS
 # ============================================================================
@@ -143,4 +143,5 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 !exists($$PWD/mainwindow.cpp) {
     error("mainwindow.cpp introuvable !")
+
 }
