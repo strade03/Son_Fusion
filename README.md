@@ -4,7 +4,7 @@
 ![Platform](https://img.shields.io/badge/Platform-Windows_|_macOS_|_Linux-lightgrey.svg)
 [![Qt](https://img.shields.io/badge/Built%20with-Qt6-green.svg)](https://www.qt.io/)
 
-**Son Fusion** est une application gratuite et open-source permettant de fusionner et d'éditer simplement vos fichiers audio. Idéal pour les projets scolaires, les webradios, les podcasts ou les interviews.
+**Son Fusion** est une application gratuite et open-source permettant de fusionner,d'enregistrer et d'éditer simplement vos fichiers audio. Idéal pour les projets scolaires, les webradios, les podcasts ou les interviews.
  
     
 | Fenêtre Principale | Éditeur Audio |
@@ -38,7 +38,7 @@ Choisissez la version correspondant à votre système d'exploitation :
 > ```bash
 > sudo apt install ffmpeg
 > ```
-> *Note : Pensez à rendre le fichier téléchargé exécutable (Clic-droit > Propriétés > Permissions > Autoriser l'exécution ou `chmod +x SonFusion_Linux_2.1`).*
+> *Note : Pensez à rendre le fichier téléchargé exécutable (Clic-droit > Propriétés > Permissions > Autoriser l'exécution ou `chmod +x SonFusion_Linux_2.2`).*
 
 ## 🚀 Fonctionnalités
 
