@@ -22,14 +22,16 @@ SOURCES += \
     customtooltip.cpp \
     main.cpp \
     mainwindow.cpp \
-    waveformwidget.cpp
+    waveformwidget.cpp \
+    audiorecorder.cpp
 
 HEADERS += \
     audioeditor.h \
     audiomerger.h \
     customtooltip.h \
     mainwindow.h \
-    waveformwidget.h
+    waveformwidget.h \
+    audiorecorder.h
 
 FORMS += \
     audioeditor.ui
@@ -143,5 +145,4 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 
 !exists($$PWD/mainwindow.cpp) {
     error("mainwindow.cpp introuvable !")
-
 }

@@ -99,12 +99,18 @@ AudioEditor::AudioEditor(QWidget *parent)
     init();
 }
 
-AudioEditor::AudioEditor(const QString &filePath, QWidget *parent)
+AudioEditor::AudioEditor(const QString &filePath, const QString &workingDir, QWidget *parent, bool isTempRecording)
     : AUDIOEDITOR_BASE(parent)
     , modeAutonome(false)
     , currentAudioFile(filePath)
+    , isTempRecording(isTempRecording)
+    , workingDirectory(workingDir) // <--- On mémorise le dossier
 {
     init();
+    
+    if (isTempRecording) {
+        isModified = true;
+    }
 }
 
 AudioEditor::~AudioEditor()
@@ -427,22 +433,40 @@ void AudioEditor::saveModifiedAudio()
         QMessageBox::warning(this, tr("Erreur"), tr("Aucun signal audio à sauvegarder."));
         return;
     }
-    
-    QMessageBox msgBox;
-    msgBox.setWindowTitle(tr("Confirmer la sauvegarde"));
-    msgBox.setText(tr("Voulez-vous vraiment enregistrer les modifications sur ce fichier audio ? "
-                      "Assurez-vous d'avoir une sauvegarde de l'original"));
-    msgBox.setIcon(QMessageBox::Question);
-    msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
-    msgBox.setDefaultButton(QMessageBox::No);
-    
-    msgBox.button(QMessageBox::Yes)->setText(tr("Oui"));
-    msgBox.button(QMessageBox::No)->setText(tr("Non"));
-    
-    int reply = msgBox.exec();
-    if (reply != QMessageBox::Yes)
-        return;
+    QString targetFile;
 
+    if (isTempRecording) {
+        // 1. Générer le nom par défaut
+        QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
+        QString defaultName = QString("Enregistrement_%1.wav").arg(timeStamp);
+        
+        QString defaultPath = QDir(workingDirectory).filePath(defaultName);
+        
+        // 3. Ouvrir la boite de dialogue "Enregistrer sous" pré-remplie
+        targetFile = QFileDialog::getSaveFileName(this, 
+            tr("Enregistrer l'enregistrement"), 
+            defaultPath, // <--- On propose ce chemin par défaut
+            tr("Fichier Audio WAV (*.wav)"));
+
+        // 4. Si l'utilisateur annule, on sort
+        if (targetFile.isEmpty()) return;
+        
+    } else {      
+        QMessageBox msgBox;
+        msgBox.setWindowTitle(tr("Confirmer la sauvegarde"));
+        msgBox.setText(tr("Voulez-vous vraiment enregistrer les modifications sur ce fichier audio ? "
+                        "Assurez-vous d'avoir une sauvegarde de l'original"));
+        msgBox.setIcon(QMessageBox::Question);
+        msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+        msgBox.setDefaultButton(QMessageBox::No);
+        
+        msgBox.button(QMessageBox::Yes)->setText(tr("Oui"));
+        msgBox.button(QMessageBox::No)->setText(tr("Non"));
+        
+        int reply = msgBox.exec();
+        if (reply != QMessageBox::Yes)
+            return;
+    }
     QString tmp = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp_save.raw";
     QFile f(tmp);
     if (!f.open(QIODevice::WriteOnly)) {
@@ -458,13 +482,19 @@ void AudioEditor::saveModifiedAudio()
     QString ffmpegPath = getFFmpegPath();
     
     QStringList args;
-    if (currentAudioFile.endsWith(".wav", Qt::CaseInsensitive)) {
-        args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
-             << "-i" << tmp << "-c:a" << "pcm_s16le" << currentAudioFile;
-    } else {
-        args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
-             << "-i" << tmp << currentAudioFile;
-    }
+    args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
+         << "-i" << tmp
+         << "-c:a" << "pcm_s16le"
+         << targetFile;
+
+    // if (currentAudioFile.endsWith(".wav", Qt::CaseInsensitive)) {
+    //     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
+    //          << "-i" << tmp << "-c:a" << "pcm_s16le" << currentAudioFile;
+    // } else {
+    //     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
+    //          << "-i" << tmp << currentAudioFile;
+    // }
+
     QProcess ff;
     ff.start(ffmpegPath, args);
     
@@ -475,6 +505,13 @@ void AudioEditor::saveModifiedAudio()
     }
     QFile::remove(tmp);
     isModified = false;
+
+    // Mise à jour de l'état
+    if (isTempRecording) {
+        isTempRecording = false; // Ce n'est plus un temp, c'est un vrai fichier maintenant
+        currentAudioFile = targetFile;
+        setWindowTitle(tr("Éditeur Audio - ") + QFileInfo(currentAudioFile).fileName());
+    }
 
     player->setSource(QUrl::fromLocalFile(currentAudioFile));
     QApplication::restoreOverrideCursor();

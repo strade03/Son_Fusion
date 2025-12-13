@@ -22,5 +22,6 @@
         <file>icones/up.png</file>
         <file>icones/zoom+.png</file>
         <file>icones/zoom-.png</file>
+        <file>icones/record.png</file>
     </qresource>
 </RCC>

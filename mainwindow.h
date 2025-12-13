@@ -35,6 +35,7 @@ private slots:
     void showError(const QString& message);
     void showInfo();
     void onPlaybackStateChanged(QMediaPlayer::PlaybackState state);
+    void openRecorder();
 
 private:
     void createUI();
@@ -68,6 +69,7 @@ private:
     AudioMerger* audioMerger;
     QMediaPlayer* mediaPlayer;
     QAudioOutput* audioOutput;
+    QPushButton* recordButton;
 };
 
 #endif // MAINWINDOW_H

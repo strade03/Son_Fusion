@@ -6,7 +6,7 @@ int main(int argc, char *argv[]) {
     QApplication app(argc, argv);
 
     app.setApplicationName("Son Fusion");
-    app.setApplicationVersion("2.1");
+    app.setApplicationVersion("2.2");
 
     // Initialiser les ressources
     QDir::setCurrent(QCoreApplication::applicationDirPath());

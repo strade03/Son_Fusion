@@ -56,7 +56,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/open-folder.png</normalon>
+            <normalon>:/icones/open-folder.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -89,7 +89,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/play.png</normalon>
+            <normalon>:/icones/play.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -122,7 +122,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/stop.png</normalon>
+            <normalon>:/icones/stop.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -155,7 +155,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/reset.png</normalon>
+            <normalon>:/icones/reset.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -188,7 +188,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/normaliser.png</normalon>
+            <normalon>:/icones/normaliser.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -288,7 +288,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normalon>icones/couper.png</normalon>
+              <normalon>:/icones/couper.png</normalon>
              </iconset>
             </property>
             <property name="iconSize">
@@ -321,7 +321,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normalon>icones/normaliser.png</normalon>
+              <normalon>:/icones/normaliser.png</normalon>
              </iconset>
             </property>
             <property name="iconSize">
@@ -384,7 +384,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/zoom-.png</normalon>
+            <normalon>:/icones/zoom-.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -417,7 +417,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/zoom+.png</normalon>
+            <normalon>:/icones/zoom+.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">
@@ -450,7 +450,7 @@
           </property>
           <property name="icon">
            <iconset>
-            <normalon>icones/save.png</normalon>
+            <normalon>:/icones/save.png</normalon>
            </iconset>
           </property>
           <property name="iconSize">

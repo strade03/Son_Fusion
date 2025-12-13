@@ -29,9 +29,9 @@ class AudioEditor : public AUDIOEDITOR_BASE
 
 public:
     explicit AudioEditor(QWidget *parent = nullptr);
-    explicit AudioEditor(const QString &filePath, QWidget *parent);
+    explicit AudioEditor(const QString &filePath, const QString &workingDir, QWidget *parent, bool isTempRecording = false);
     ~AudioEditor();
-
+    bool isContentModified() const { return isModified; }
 private slots:
     void openFile();
     void updatePositionLabel(qint64 position);
@@ -57,7 +57,7 @@ private:
     // ========================================================================
     // MÉTHODES MULTIPLATEFORME FFMPEG
     // ========================================================================
-    
+    bool isTempRecording; // Si on arrive avec un fichier temporaire d'enregistrement
     /**
      * @brief Retourne le chemin de FFmpeg selon la plateforme
      * @return QString contenant le chemin vers l'exécutable FFmpeg
@@ -95,4 +95,5 @@ private:
     bool fichierCharge = false;
     bool isModified; 
     void releaseResources();
+    QString workingDirectory;
 };

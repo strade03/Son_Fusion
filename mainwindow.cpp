@@ -2,6 +2,7 @@
 #include "audiomerger.h"
 #include "customtooltip.h"
 #include "audioeditor.h"
+#include "audiorecorder.h"
 
 #include <QApplication>
 #include <QVBoxLayout>
@@ -93,6 +94,7 @@ void MainWindow::createUI() {
     pathLabel = new QLabel(currentPath, this);
     folderLayout->addWidget(pathLabel);
 
+
     topLayout->addLayout(folderLayout, 3); // Proportion 3/4 pour le chemin
 
     // Partie droite : type de fichiers dans un cadre
@@ -133,7 +135,7 @@ void MainWindow::createUI() {
     QVBoxLayout* controlLayout = new QVBoxLayout();
     controlLayout->setAlignment(Qt::AlignTop); // Aligner les contrôles en haut
 
-    // Première ligne de boutons : lecture, édition et suppression
+    // Ligne 1 : Play + Record
     QHBoxLayout* topButtonsLayout = new QHBoxLayout();
 
     playButton = new QPushButton(this);
@@ -144,18 +146,18 @@ void MainWindow::createUI() {
     connect(playButton, &QPushButton::clicked, this, &MainWindow::playSelectedFile);
     topButtonsLayout->addWidget(playButton);
 
-    deleteButton = new QPushButton(this);
-    deleteButton->setIcon(QIcon(":/icones/delete.png"));
-    deleteButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
-    deleteButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
-    deleteButton->setEnabled(false);
-    connect(deleteButton, &QPushButton::clicked, this, &MainWindow::deleteSelectedFile);
-    topButtonsLayout->addWidget(deleteButton);
+    // Création du bouton Record (C'est ici qu'il doit être créé !)
+    recordButton = new QPushButton(this);
+    recordButton->setIcon(QIcon(":/icones/record.png")); 
+    recordButton->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+    recordButton->setFixedSize(BUTTON_SIZE, BUTTON_SIZE);
+    connect(recordButton, &QPushButton::clicked, this, &MainWindow::openRecorder);
+    topButtonsLayout->addWidget(recordButton);
 
     controlLayout->addLayout(topButtonsLayout);
 
+    // Ligne 2 : Edition (seul au milieu)
     QHBoxLayout* middleButtonsLayout = new QHBoxLayout();
-    // Boutons Edition
     editButton = new QPushButton(this);
     editButton->setIcon(QIcon(":/icones/edit.png"));
     editButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
@@ -163,17 +165,28 @@ void MainWindow::createUI() {
     editButton->setEnabled(false);
     connect(editButton, &QPushButton::clicked, this, &MainWindow::editSelectedFile);
     middleButtonsLayout->addWidget(editButton);
+    controlLayout->addLayout(middleButtonsLayout);
 
-    // Ajouter un espace plus important entre les deux groupes de boutons
+    // Ligne 3 : Dupliquer + Supprimer
+    QHBoxLayout* bottomButtonsLayout = new QHBoxLayout();
+    
     copieButton = new QPushButton(this);
     copieButton->setIcon(QIcon(":/icones/duplicate.png"));
     copieButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
     copieButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
     copieButton->setEnabled(false);
-    connect(copieButton, &QPushButton::clicked, this, &MainWindow::duplicateSelectedFile); // TODO faire fonction
-    middleButtonsLayout->addWidget(copieButton);
+    connect(copieButton, &QPushButton::clicked, this, &MainWindow::duplicateSelectedFile);
+    bottomButtonsLayout->addWidget(copieButton);
+    
+    deleteButton = new QPushButton(this);
+    deleteButton->setIcon(QIcon(":/icones/delete.png"));
+    deleteButton->setIconSize(QSize(ICON_SIZE,ICON_SIZE));
+    deleteButton->setFixedSize(BUTTON_SIZE,BUTTON_SIZE);
+    deleteButton->setEnabled(false);
+    connect(deleteButton, &QPushButton::clicked, this, &MainWindow::deleteSelectedFile);
+    bottomButtonsLayout->addWidget(deleteButton);
 
-    controlLayout->addLayout(middleButtonsLayout);
+    controlLayout->addLayout(bottomButtonsLayout);
 
     controlLayout->addSpacing(40);
 
@@ -204,7 +217,8 @@ void MainWindow::createUI() {
     new CustomTooltip(deleteButton, "Supprimer le fichier selectionné de la liste des sons à fusionner.");
     new CustomTooltip(upButton, "Remonter le fichier selectionné d'une place dans la liste des sons à fusionner.");
     new CustomTooltip(downButton, "Descendre le fichier selectionné d'une place dans la liste des sons à fusionner.");
-
+    new CustomTooltip(recordButton, "Enregistrer un nouveau son");
+    
     centralLayout->addLayout(controlLayout);
 
     mainLayout->addLayout(centralLayout);
@@ -271,6 +285,27 @@ void MainWindow::createUI() {
     // Utiliser la barre d'état existante
     statusBar()->showMessage("Prêt");
     statusBar()->setStyleSheet("background-color: " + STATUS_BAR_COLOR + "; color: white;");
+}
+
+// Gestion de l'enregistrement Audio
+void MainWindow::openRecorder() {
+    AudioRecorder recorderDialog(this);
+    if (recorderDialog.exec() == QDialog::Accepted) {
+        QString recordedFile = recorderDialog.getRecordedFilePath();
+        
+        if (QFile::exists(recordedFile)) {
+            // CORRECTION : On passe 'currentPath' en 2ème argument
+            AudioEditor editor(recordedFile, currentPath, this, true);
+            
+            int result = editor.exec();
+            
+            if (result == QDialog::Accepted || !editor.isContentModified()) {
+                 updateFileList();
+            }
+            
+            QFile::remove(recordedFile);
+        }
+    }
 }
 
 void MainWindow::showInfo() {
@@ -539,7 +574,7 @@ void MainWindow::editSelectedFile() {
     }
 
     // Créer et afficher l'éditeur audio
-    AudioEditor editor(filePath, this);
+    AudioEditor editor(filePath, currentPath, this);
     int result = editor.exec();
 
     // Si l'édition a été effectuée, mettre à jour la liste des fichiers
