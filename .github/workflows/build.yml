@@ -154,10 +154,10 @@ jobs:
           path: SonFusion_Linux.AppImage
 
 # =========================================================
-  # JOB WINDOWS (MSVC)
+  # JOB WINDOWS (MSVC) + INSTALLER (Inno Setup)
   # =========================================================
   build-windows:
-    name: Build Windows (MSVC)
+    name: Build Windows (Installer)
     runs-on: windows-latest
     
     steps:
@@ -168,24 +168,20 @@ jobs:
         uses: jurplel/install-qt-action@v3
         with:
           version: '6.6.2'
-          arch: win64_msvc2019_64 # Compatible avec VS2022
+          arch: win64_msvc2019_64
           modules: 'qtmultimedia qt5compat'
+
+      - name: Installation de Inno Setup
+        run: choco install innosetup
 
       - name: Téléchargement de FFmpeg (Windows)
         shell: pwsh
         run: |
-          # On télécharge la version officielle (gyan.dev)
           $url = "https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip"
           $output = "ffmpeg.zip"
           Invoke-WebRequest -Uri $url -OutFile $output
-          
-          # On décompresse
           Expand-Archive $output -DestinationPath .
-          
-          # On prépare un dossier 'bin_win' propre
           New-Item -ItemType Directory -Force -Path bin_win
-          
-          # On déplace les .exe au bon endroit (le nom du dossier change selon la version, d'où le wildcard *)
           Move-Item ffmpeg-*-essentials_build/bin/ffmpeg.exe bin_win/
           Move-Item ffmpeg-*-essentials_build/bin/ffprobe.exe bin_win/
 
@@ -195,42 +191,42 @@ jobs:
       - name: Compilation
         shell: cmd
         run: |
-          :: Configuration Release
           qmake son_fusion.pro CONFIG+=release
-          :: Compilation avec nmake (inclus avec VS)
           nmake
 
-      - name: Création du paquet (Deploy)
+      - name: Préparation des fichiers (Deploy)
         shell: pwsh
         run: |
-          # Créer le dossier de déploiement
+          # 1. Créer le dossier qui sera lu par Inno Setup
           New-Item -ItemType Directory -Force -Path deploy
           
-          # Copier l'exécutable compilé
-          # Note: qmake met souvent l'exe dans release/
+          # 2. Copier l'exécutable
           if (Test-Path "release/son_fusion.exe") {
               Copy-Item "release/son_fusion.exe" "deploy/"
           } else {
               Copy-Item "son_fusion.exe" "deploy/"
           }
           
-          # Copier FFmpeg/FFprobe
+          # 3. Copier FFmpeg
           Copy-Item "bin_win/ffmpeg.exe" "deploy/"
           Copy-Item "bin_win/ffprobe.exe" "deploy/"
           
-          # Copier le dossier icones s'il existe
+          # 4. Copier les ressources (icones) si elles ne sont pas dans le .qrc
+          # (Si tu as fait la méthode .qrc, cette étape est optionnelle mais ne fait pas de mal)
           if (Test-Path "icones") {
               Copy-Item -Path "icones" -Destination "deploy/icones" -Recurse
           }
 
-          # Outil magique Qt pour copier les DLLs
+          # 5. Ajouter toutes les DLLs Qt automatiquement
           windeployqt --release --compiler-runtime --no-translations deploy/son_fusion.exe
-          
-          # Créer le ZIP final
-          Compress-Archive -Path "deploy/*" -DestinationPath "SonFusion_Windows.zip"
 
-      - name: Upload Artifact Windows
+      - name: Création de l'installeur (Inno Setup)
+        shell: cmd
+        run: |
+          "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" installer_script.iss
+
+      - name: Upload Artifact Windows Installer
         uses: actions/upload-artifact@v4
         with:
-          name: SonFusion-Windows
-          path: SonFusion_Windows.zip        
+          name: SonFusion-Windows-Setup
+          path: SonFusion_Setup_Windows.exe   
