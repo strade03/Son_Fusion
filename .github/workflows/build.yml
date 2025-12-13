@@ -34,10 +34,15 @@ jobs:
           target: 'desktop'
           modules: 'qtmultimedia qt5compat'
           
-      - name: Installation de FFmpeg
+      - name: Téléchargement FFmpeg Statique (macOS)
         run: |
-          brew update
-          brew install ffmpeg
+          # On télécharge la version officielle statique pour Mac (evermeet.cx)
+          curl -L -o ffmpeg.zip https://evermeet.cx/ffmpeg/ffmpeg-6.1.zip
+          curl -L -o ffprobe.zip https://evermeet.cx/ffmpeg/ffprobe-6.1.zip
+          unzip ffmpeg.zip
+          unzip ffprobe.zip
+          # On les rend exécutables
+          chmod +x ffmpeg ffprobe
 
       - name: Compilation
         run: |
@@ -48,30 +53,20 @@ jobs:
         run: |
           mkdir -p deploy
           cp -r son_fusion.app deploy/
-          
           mkdir -p deploy/son_fusion.app/Contents/MacOS
           
-          # 1. Copie de FFmpeg
-          FFMPEG_BIN=$(brew --prefix ffmpeg)/bin
-          cp "$FFMPEG_BIN/ffmpeg" deploy/son_fusion.app/Contents/MacOS/
-          cp "$FFMPEG_BIN/ffprobe" deploy/son_fusion.app/Contents/MacOS/
-          chmod +x deploy/son_fusion.app/Contents/MacOS/ffmpeg
-          chmod +x deploy/son_fusion.app/Contents/MacOS/ffprobe
+          # COPIE DES BINAIRES STATIQUES (ceux qu'on vient de télécharger)
+          cp ffmpeg deploy/son_fusion.app/Contents/MacOS/
+          cp ffprobe deploy/son_fusion.app/Contents/MacOS/
           
-          # 2. On utilise macdeployqt UNIQUEMENT pour copier les librairies Qt (pas de dmg, pas de sign)
+          # Nettoyage et préparation Qt
           macdeployqt deploy/son_fusion.app -verbose=2
           
-          # 3. SIGNATURE MANUELLE (La méthode infaillible)
-          # --force : écrase les signatures existantes
-          # --deep : signe aussi les frameworks Qt et FFmpeg à l'intérieur
-          # - : signature ad-hoc (sans certificat payant)
+          # Signature (Force + Deep pour signer aussi ffmpeg à l'intérieur)
           codesign --force --deep --sign - deploy/son_fusion.app
           
-          # 4. Création du DMG avec l'outil Apple (hdiutil) au lieu de Qt
-          # Cela garantit que le fichier signé reste intact
+          # Création du DMG avec hdiutil
           hdiutil create -volname "SonFusion" -srcfolder deploy/son_fusion.app -ov -format UDZO deploy/son_fusion.dmg
-          
-          # Renommage pour l'artifact
           mv deploy/son_fusion.dmg SonFusion_macOS.dmg
 
       - name: Upload Artifact macOS
