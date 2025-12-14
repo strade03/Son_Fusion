@@ -337,7 +337,7 @@ void MainWindow::showInfo() {
         "Application de fusion de fichiers audio<br>"
         "©Stéphane Verdier - Freeware - 2025<br><br>"
         "Développée en C++ avec Qt<br>"
-        "Ce logiciel utilise FFmpeg (ffmpeg.org) sous licence LGPLv2.1 / GPLv3<br><br>"
+        "Ce logiciel utilise FFmpeg (ffmpeg.org)<br>sous licence LGPLv2.1 / GPLv3<br><br>"
         "Crédits icones :<br>"
         "<a href='https://www.flaticon.com/authors/kumakamu'>https://www.flaticon.com/authors/kumakamu</a><br>"
         "<a href='https://www.flaticon.com/fr/auteurs/iconixar'>https://www.flaticon.com/fr/auteurs/iconixar</a>"
