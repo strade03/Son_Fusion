@@ -33,6 +33,7 @@ public:
     int sampleToPixel(qint64 sample) const;
     void scrollToPixel(int x);
     void restoreZoomState(double spp, int offset);
+    void setLoading(bool loading); 
 
 signals:
     void selectionChanged(qint64 start, qint64 end);
@@ -84,4 +85,6 @@ private:
 
     QVector<QLine> m_lines;
     QScrollBar *scrollBar;
+
+    bool isLoading;
 };

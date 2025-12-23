@@ -71,7 +71,7 @@ private:
      * @return true si FFmpeg est trouvé et opérationnel
      */
     bool checkFFmpegAvailability();
-    
+    bool reloadAudioSamplesSync(const QString &filePath);
     // ========================================================================
     // MÉTHODES EXISTANTES
     // ========================================================================
@@ -98,4 +98,5 @@ private:
     bool isModified; 
     void releaseResources();
     QString workingDirectory;
+    int getChannelCount(const QString &filePath);
 };

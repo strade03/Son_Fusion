@@ -12,12 +12,14 @@
 #include <QCoreApplication>
 #include <cmath>
 #include <cstring>
+//#include <QInputDialog>
 
 #include <QDialog>
 #include <QVBoxLayout>
 #include <QLabel>
 #include <QLineEdit>
 #include <QDialogButtonBox>
+#include <QThread> 
 
   
 // ============================================================================
@@ -233,8 +235,11 @@ void AudioEditor::openFile()
     }
     if (currentAudioFile.isEmpty()) return;
 
-    player->setSource(QUrl::fromLocalFile(currentAudioFile));
-    audioSamples.clear(); totalSamples = 0;
+    // player->setSource(QUrl::fromLocalFile(currentAudioFile));
+    audioSamples.clear(); 
+    totalSamples = 0;
+    waveformWidget->setLoading(true);
+    QCoreApplication::processEvents();
     if (currentAudioFile.endsWith(".wav", Qt::CaseInsensitive))
         extractWaveform(currentAudioFile);
     else
@@ -246,6 +251,7 @@ void AudioEditor::openFile()
     waveformWidget->resetSelection(-1);
     waveformWidget->setPlayheadPosition(0);
     waveformWidget->setisLoaded(true);
+    player->setSource(QUrl::fromLocalFile(currentAudioFile));
 }
 
 void AudioEditor::extractWaveform(const QString &path)
@@ -254,47 +260,269 @@ void AudioEditor::extractWaveform(const QString &path)
     decoder->start();
 }
 
+// Ancienne méthode qui ne gere pas le mono/stéréo
+// void AudioEditor::extractWaveformWithFFmpeg(const QString &path)
+// {
+//     // Vérifier la disponibilité de FFmpeg
+//     if (!checkFFmpegAvailability()) {
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+    
+//     QApplication::setOverrideCursor(Qt::WaitCursor);
+//     QString tmp = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp.raw";
+    
+//     // MODIFICATION : Utiliser getFFmpegPath() au lieu de "ffmpeg" en dur
+//     QString ffmpegPath = getFFmpegPath();
+    
+//     QStringList args{"-i", path, "-ac","1","-ar","44100","-f","f32le", tmp};
+//     QProcess ff;
+//     ff.start(ffmpegPath, args);
+    
+//     if (!ff.waitForFinished(15000) || ff.exitStatus() != QProcess::NormalExit) {
+//         QMessageBox::warning(this, tr("Erreur FFmpeg"),
+//                              tr("La commande FFmpeg a échoué.\n%1").arg(QString(ff.readAllStandardError())));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+//     QFile f(tmp);
+//     if (!f.open(QIODevice::ReadOnly)) {
+//         QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier raw généré."));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+//     QByteArray d = f.readAll(); f.close(); QFile::remove(tmp);
+//     int count = static_cast<int>(d.size() / sizeof(float));
+//     if (count <= 0) {
+//         QMessageBox::warning(this, tr("Erreur"), tr("Aucun échantillon n'a été extrait."));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+//     audioSamples.resize(count);
+//     std::memcpy(audioSamples.data(), d.constData(), count * sizeof(float));
+//     totalSamples = count;
+//     waveformWidget->setFullWaveform(audioSamples);
+//     QApplication::restoreOverrideCursor();
+// }
+
+
+int AudioEditor::getChannelCount(const QString &filePath)
+{
+    QProcess process;
+    QString ffmpegPath = getFFmpegPath();
+    
+    // On lance juste "ffmpeg -i fichier"
+    // FFmpeg va afficher les infos et s'arrêter car il manque le fichier de sortie
+    QStringList args;
+    args << "-i" << filePath; 
+
+    process.start(ffmpegPath, args);
+    process.waitForFinished(3000); 
+
+    // FFmpeg écrit les infos techniques dans le canal d'Erreur (StandardError), pas Output !
+    QString output = process.readAllStandardError(); 
+
+    // On analyse le texte pour trouver "stereo" ou "mono"
+    // Ex de sortie : "Stream #0:0: Audio: mp3, 44100 Hz, stereo, fltp, 128 kb/s"
+    
+    if (output.contains(" stereo,", Qt::CaseInsensitive)) {
+        return 2;
+    }
+    
+    if (output.contains(" mono,", Qt::CaseInsensitive)) {
+        return 1;
+    }
+
+    // Sécurité pour les formats bizarres ("1 channels")
+    if (output.contains("1 channels", Qt::CaseInsensitive)) return 1;
+    if (output.contains("2 channels", Qt::CaseInsensitive)) return 2;
+
+    // Par défaut, si on ne sait pas, on dit 2 (Stéréo) 
+    // pour déclencher la formule de mixage sécurisée (0.5+0.5) et éviter la saturation.
+    return 2; 
+}
+
+// Extract ok mais pb gestion de la memoire avecc gros fichier
+// void AudioEditor::extractWaveformWithFFmpeg(const QString &path)
+// {
+//     if (!checkFFmpegAvailability()) {
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+    
+//     // =========================================================
+//     // CORRECTION ICI : ON LANCE L'AFFICHAGE "CHARGEMENT" MAINTENANT
+//     // =========================================================
+//     waveformWidget->setLoading(true);
+//     QApplication::setOverrideCursor(Qt::WaitCursor);
+    
+//     // TRÈS IMPORTANT : Force Qt à dessiner le widget TOUT DE SUITE
+//     // Sinon, le programme gèle sur l'ancien affichage pendant le waitForFinished
+//     QCoreApplication::processEvents(); 
+//     // =========================================================
+
+//     QString tmp = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp.raw";
+//     QString ffmpegPath = getFFmpegPath();
+    
+//     // getChannelCount prend un peu de temps, c'est bien de l'avoir après le setLoading
+//     int channels = getChannelCount(path);
+    
+//     QStringList args;
+//     args << "-i" << path;
+//     if (channels > 1) {
+//         // Stéréo -> Moyenne pour éviter saturation
+//         args << "-af" << "pan=mono|c0=0.5*c0+0.5*c1";
+//     } else {
+//         // Mono -> Copie
+//         args << "-ac" << "1"; 
+//     }
+    
+//     args << "-ar" << "44100"
+//          << "-f" << "f32le"
+//          << tmp;
+
+//     QProcess ff;
+//     ff.start(ffmpegPath, args);
+    
+//     // Le programme va attendre ici (interface bloquée), mais comme on a fait
+//     // processEvents() juste avant, le texte "Chargement..." restera affiché.
+//     if (!ff.waitForFinished(15000) || ff.exitStatus() != QProcess::NormalExit) {
+//         // En cas d'erreur, on enlève le message de chargement
+//         waveformWidget->setLoading(false); 
+//         QMessageBox::warning(this, tr("Erreur FFmpeg"),
+//                              tr("La commande FFmpeg a échoué.\n%1").arg(QString(ff.readAllStandardError())));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+    
+//     QFile f(tmp);
+//     if (!f.open(QIODevice::ReadOnly)) {
+//         waveformWidget->setLoading(false); // Pensez à désactiver le loading en cas d'erreur
+//         QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier raw généré."));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+    
+//     QByteArray d = f.readAll(); 
+//     f.close(); 
+//     QFile::remove(tmp);
+    
+//     int count = static_cast<int>(d.size() / sizeof(float));
+//     if (count <= 0) {
+//         waveformWidget->setLoading(false); // Idem
+//         QMessageBox::warning(this, tr("Erreur"), tr("Aucun échantillon n'a été extrait."));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+    
+//     audioSamples.resize(count);
+//     std::memcpy(audioSamples.data(), d.constData(), count * sizeof(float));
+//     totalSamples = count;
+    
+//     // On désactive le loading, setFullWaveform va repeindre l'onde
+//     waveformWidget->setLoading(false); 
+//     waveformWidget->setFullWaveform(audioSamples);
+    
+//     QApplication::restoreOverrideCursor();
+// }
+
 void AudioEditor::extractWaveformWithFFmpeg(const QString &path)
 {
-    // Vérifier la disponibilité de FFmpeg
     if (!checkFFmpegAvailability()) {
         QApplication::restoreOverrideCursor();
         return;
     }
     
+    // 1. Activation de l'interface de chargement
+    waveformWidget->setLoading(true);
     QApplication::setOverrideCursor(Qt::WaitCursor);
+    QCoreApplication::processEvents(); 
+
     QString tmp = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp.raw";
-    
-    // MODIFICATION : Utiliser getFFmpegPath() au lieu de "ffmpeg" en dur
     QString ffmpegPath = getFFmpegPath();
     
-    QStringList args{"-i", path, "-ac","1","-ar","44100","-f","f32le", tmp};
+    int channels = getChannelCount(path);
+    
+    QStringList args;
+    args << "-y" << "-i" << path; // Ajout de -y pour forcer l'écrasement si le temp existe
+    if (channels > 1) {
+        args << "-af" << "pan=mono|c0=0.5*c0+0.5*c1";
+    } else {
+        args << "-ac" << "1"; 
+    }
+    
+    args << "-ar" << "44100"
+         << "-f" << "f32le"
+         << tmp;
+
     QProcess ff;
     ff.start(ffmpegPath, args);
     
-    if (!ff.waitForFinished(15000) || ff.exitStatus() != QProcess::NormalExit) {
+    // 2. CORRECTION TIMEOUT : 15s est trop court pour 264Mo. 
+    // On passe à 300000ms (5 minutes) ou -1 (infini) pour être sûr.
+    if (!ff.waitForFinished(300000) || ff.exitStatus() != QProcess::NormalExit) {
+        waveformWidget->setLoading(false); 
         QMessageBox::warning(this, tr("Erreur FFmpeg"),
-                             tr("La commande FFmpeg a échoué.\n%1").arg(QString(ff.readAllStandardError())));
+                             tr("La commande FFmpeg a échoué ou a pris trop de temps.\n%1").arg(QString(ff.readAllStandardError())));
         QApplication::restoreOverrideCursor();
         return;
     }
+    
     QFile f(tmp);
     if (!f.open(QIODevice::ReadOnly)) {
+        waveformWidget->setLoading(false);
         QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier raw généré."));
         QApplication::restoreOverrideCursor();
         return;
     }
-    QByteArray d = f.readAll(); f.close(); QFile::remove(tmp);
-    int count = static_cast<int>(d.size() / sizeof(float));
-    if (count <= 0) {
+    
+    // 3. CORRECTION MÉMOIRE (La partie critique)
+    qint64 fileSize = f.size();
+    qint64 samplesCount = fileSize / sizeof(float);
+
+    if (samplesCount <= 0) {
+        waveformWidget->setLoading(false);
         QMessageBox::warning(this, tr("Erreur"), tr("Aucun échantillon n'a été extrait."));
+        f.close();
         QApplication::restoreOverrideCursor();
         return;
     }
-    audioSamples.resize(count);
-    std::memcpy(audioSamples.data(), d.constData(), count * sizeof(float));
-    totalSamples = count;
+    
+    // Au lieu de tout lire dans un QByteArray (double RAM),
+    // on redimensionne d'abord le vecteur cible...
+    try {
+        audioSamples.resize(samplesCount);
+    } catch (const std::bad_alloc&) {
+        waveformWidget->setLoading(false);
+        f.close();
+        QFile::remove(tmp);
+        QApplication::restoreOverrideCursor();
+        QMessageBox::critical(this, tr("Erreur Mémoire"), 
+            tr("Fichier trop volumineux pour la mémoire disponible (RAM insuffisante)."));
+        return;
+    }
+
+    // ... et on lit directement du disque vers le vecteur
+    // On lit par blocs pour ne pas geler l'OS si le disque est lent, 
+    // bien que read() direct soit possible.
+    char* ptr = reinterpret_cast<char*>(audioSamples.data());
+    qint64 bytesToRead = fileSize;
+    while (bytesToRead > 0) {
+        qint64 chunk = qMin(bytesToRead, qint64(1024 * 1024 * 64)); // Blocs de 64Mo
+        qint64 read = f.read(ptr, chunk);
+        if (read <= 0) break;
+        ptr += read;
+        bytesToRead -= read;
+    }
+
+    f.close(); 
+    QFile::remove(tmp);
+    
+    totalSamples = audioSamples.size();
+    
+    waveformWidget->setLoading(false); 
     waveformWidget->setFullWaveform(audioSamples);
+    
     QApplication::restoreOverrideCursor();
 }
 
@@ -326,6 +554,7 @@ void AudioEditor::decodingFinished()
         return;
     }
     totalSamples = audioSamples.size();
+    waveformWidget->setLoading(false);
     waveformWidget->setFullWaveform(audioSamples);
 }
 
@@ -434,64 +663,206 @@ void AudioEditor::updatePlaybackFromModifiedData()
     player->setSource(QUrl::fromLocalFile(tempPlaybackFile));
 }
 
+// void AudioEditor::saveModifiedAudio()
+// {
+//     if (audioSamples.isEmpty()) {
+//         QMessageBox::warning(this, tr("Erreur"), tr("Aucun signal audio à sauvegarder."));
+//         return;
+//     }
+//     QString targetFile;
+
+//     if (isTempRecording) {
+//         // 1. Générer un nom par défaut
+//         QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
+//         QString defaultName = QString("Enregistrement_%1").arg(timeStamp);
+        
+//         QDialog dialog(this);
+//         dialog.setWindowTitle(tr("Sauvegarder l'enregistrement"));
+        
+//         QVBoxLayout *layout = new QVBoxLayout(&dialog);
+        
+//         QLabel *label = new QLabel(tr("Nom du fichier :"), &dialog);
+//         layout->addWidget(label);
+        
+//         QLineEdit *lineEdit = new QLineEdit(&dialog);
+//         lineEdit->setText(defaultName);
+//         layout->addWidget(lineEdit);
+        
+//         QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
+//         layout->addWidget(buttons);
+        
+//         connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
+//         connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
+        
+//         // ICI, le redimensionnement fonctionnera parfaitement car c'est votre layout
+//         dialog.resize(280, dialog.height()); 
+        
+//         bool ok = (dialog.exec() == QDialog::Accepted);
+//         QString fileName = lineEdit->text();
+        
+//         if (!ok || fileName.isEmpty()) return; // Annulation
+        
+//         // 2. S'assurer de l'extension .wav
+//         if (!fileName.endsWith(".wav", Qt::CaseInsensitive)) {
+//             fileName += ".wav";
+//         }
+
+//         // 3. Construire le chemin complet dans le dossier de travail
+//         targetFile = QDir(workingDirectory).filePath(fileName);
+
+//         // 4. Vérifier l'écrasement
+//         if (QFile::exists(targetFile)) {
+//             QMessageBox::StandardButton reply = QMessageBox::question(this, 
+//                 tr("Fichier existant"),
+//                 tr("Le fichier '%1' existe déjà.\nVoulez-vous l'écraser ?").arg(fileName),
+//                 QMessageBox::Yes | QMessageBox::No);
+            
+//             if (reply != QMessageBox::Yes) return;
+//         }
+        
+//     } else {
+//         QMessageBox msgBox;
+//         msgBox.setWindowTitle(tr("Confirmer la sauvegarde"));
+//         msgBox.setText(tr("Voulez-vous vraiment enregistrer les modifications sur ce fichier audio ? "
+//                         "Assurez-vous d'avoir une sauvegarde de l'original"));
+//         msgBox.setIcon(QMessageBox::Question);
+//         msgBox.setStandardButtons(QMessageBox::Yes | QMessageBox::No);
+//         msgBox.setDefaultButton(QMessageBox::No);
+        
+//         msgBox.button(QMessageBox::Yes)->setText(tr("Oui"));
+//         msgBox.button(QMessageBox::No)->setText(tr("Non"));
+        
+//         int reply = msgBox.exec();
+//         if (reply != QMessageBox::Yes)
+//             return;
+//     }
+//     QString tmp = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp_save.raw";
+//     QFile f(tmp);
+//     if (!f.open(QIODevice::WriteOnly)) {
+//         QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier temporaire."));
+//         return;
+//     }
+//     QApplication::setOverrideCursor(Qt::WaitCursor);
+//     f.write(reinterpret_cast<const char*>(audioSamples.constData()), audioSamples.size() * sizeof(float));
+//     f.flush();
+//     f.close();
+
+//     // MODIFICATION : Utiliser getFFmpegPath() au lieu de "ffmpeg" en dur
+//     QString ffmpegPath = getFFmpegPath();
+    
+//     QStringList args;
+//     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
+//          << "-i" << tmp
+//          << "-c:a" << "pcm_s16le"
+//          << targetFile;
+
+//     // if (currentAudioFile.endsWith(".wav", Qt::CaseInsensitive)) {
+//     //     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
+//     //          << "-i" << tmp << "-c:a" << "pcm_s16le" << currentAudioFile;
+//     // } else {
+//     //     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
+//     //          << "-i" << tmp << currentAudioFile;
+//     // }
+
+//     QProcess ff;
+//     ff.start(ffmpegPath, args);
+    
+//     if (!ff.waitForFinished(15000) || ff.exitStatus() != QProcess::NormalExit) {
+//         QMessageBox::warning(this, tr("Erreur FFmpeg"), tr("Échec de l'encodage."));
+//         QApplication::restoreOverrideCursor();
+//         return;
+//     }
+//     QFile::remove(tmp);
+//     isModified = false;
+
+//     // Mise à jour de l'état
+//     if (isTempRecording) {
+//         isTempRecording = false; // Ce n'est plus un temp, c'est un vrai fichier maintenant
+//         currentAudioFile = targetFile;
+//         setWindowTitle(tr("Éditeur Audio - ") + QFileInfo(currentAudioFile).fileName());
+//     }
+
+//     player->setSource(QUrl::fromLocalFile(currentAudioFile));
+//     QApplication::restoreOverrideCursor();
+    
+//     QMessageBox::information(this, tr("Succès"), tr("Fichier sauvegardé avec succès."));
+// }
+
+
 void AudioEditor::saveModifiedAudio()
 {
     if (audioSamples.isEmpty()) {
         QMessageBox::warning(this, tr("Erreur"), tr("Aucun signal audio à sauvegarder."));
         return;
     }
+
+    // ========================================================================
+    // CORRECTION 1 : LIBÉRATION TOTALE DU FICHIER
+    // ========================================================================
+    player->stop();
+    player->setSource(QUrl()); // Détache le fichier du lecteur
+    if (decoder) decoder->stop(); // Par sécurité
+
+    // ========================================================================
+    // CORRECTION 2 : ANTI-SATURATION (AUTO-LIMITER)
+    // ========================================================================
+    // On vérifie si le signal dépasse le maximum autorisé (1.0)
+    // float maxVal = 0.0f;
+    // for (float s : audioSamples) {
+    //     if (std::abs(s) > maxVal) maxVal = std::abs(s);
+    // }
+
+    // // Si on dépasse 1.0 (0dB), on réduit tout pour éviter le "crachotement"
+    // if (maxVal > 1.0f) {
+    //     float scaleFactor = 0.99f / maxVal; // On vise 0.99 pour garder une marge de sécu
+    //     for (int i = 0; i < audioSamples.size(); ++i) {
+    //         audioSamples[i] *= scaleFactor;
+    //     }
+    //     // On met à jour l'affichage pour montrer que le son a été "rentré" dans les clous
+    //     waveformWidget->setFullWaveform(audioSamples); 
+    // }
+
+    // --- Suite logique de sauvegarde (Nom du fichier) ---
     QString targetFile;
 
     if (isTempRecording) {
-        // 1. Générer un nom par défaut
         QString timeStamp = QDateTime::currentDateTime().toString("yyyy-MM-dd_HH-mm-ss");
         QString defaultName = QString("Enregistrement_%1").arg(timeStamp);
-        
         QDialog dialog(this);
         dialog.setWindowTitle(tr("Sauvegarder l'enregistrement"));
-        
         QVBoxLayout *layout = new QVBoxLayout(&dialog);
-        
         QLabel *label = new QLabel(tr("Nom du fichier :"), &dialog);
         layout->addWidget(label);
-        
         QLineEdit *lineEdit = new QLineEdit(&dialog);
         lineEdit->setText(defaultName);
         layout->addWidget(lineEdit);
-        
         QDialogButtonBox *buttons = new QDialogButtonBox(QDialogButtonBox::Ok | QDialogButtonBox::Cancel, &dialog);
         layout->addWidget(buttons);
-        
         connect(buttons, &QDialogButtonBox::accepted, &dialog, &QDialog::accept);
         connect(buttons, &QDialogButtonBox::rejected, &dialog, &QDialog::reject);
-        
-        // ICI, le redimensionnement fonctionnera parfaitement car c'est votre layout
-        dialog.resize(280, dialog.height()); 
-        
+        dialog.resize(280, dialog.height());
         bool ok = (dialog.exec() == QDialog::Accepted);
         QString fileName = lineEdit->text();
-        
-        if (!ok || fileName.isEmpty()) return; // Annulation
-        
-        // 2. S'assurer de l'extension .wav
-        if (!fileName.endsWith(".wav", Qt::CaseInsensitive)) {
-            fileName += ".wav";
+        if (!ok || fileName.isEmpty()) {
+            // Si annulation, on recharge le son pour ne pas planter
+             player->setSource(QUrl::fromLocalFile(currentAudioFile));
+             return;
         }
-
-        // 3. Construire le chemin complet dans le dossier de travail
+        if (!fileName.endsWith(".wav", Qt::CaseInsensitive)) fileName += ".wav";
         targetFile = QDir(workingDirectory).filePath(fileName);
-
-        // 4. Vérifier l'écrasement
         if (QFile::exists(targetFile)) {
-            QMessageBox::StandardButton reply = QMessageBox::question(this, 
-                tr("Fichier existant"),
-                tr("Le fichier '%1' existe déjà.\nVoulez-vous l'écraser ?").arg(fileName),
-                QMessageBox::Yes | QMessageBox::No);
-            
-            if (reply != QMessageBox::Yes) return;
+             if (QMessageBox::question(this, tr("Existe"), tr("Écraser ?"), QMessageBox::Yes|QMessageBox::No) != QMessageBox::Yes) {
+                 player->setSource(QUrl::fromLocalFile(currentAudioFile));
+                 return;
+             }
+        }
+    } else {
+        targetFile = currentAudioFile;
+        if (targetFile.isEmpty()) {
+            QMessageBox::warning(this, tr("Erreur"), tr("Aucun fichier cible défini."));
+            return;
         }
         
-    } else {
         QMessageBox msgBox;
         msgBox.setWindowTitle(tr("Confirmer la sauvegarde"));
         msgBox.setText(tr("Voulez-vous vraiment enregistrer les modifications sur ce fichier audio ? "
@@ -504,59 +875,99 @@ void AudioEditor::saveModifiedAudio()
         msgBox.button(QMessageBox::No)->setText(tr("Non"));
         
         int reply = msgBox.exec();
-        if (reply != QMessageBox::Yes)
-            return;
+        if (reply != QMessageBox::Yes) return;
     }
-    QString tmp = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp_save.raw";
-    QFile f(tmp);
-    if (!f.open(QIODevice::WriteOnly)) {
-        QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'ouvrir le fichier temporaire."));
-        return;
-    }
+    
     QApplication::setOverrideCursor(Qt::WaitCursor);
-    f.write(reinterpret_cast<const char*>(audioSamples.constData()), audioSamples.size() * sizeof(float));
-    f.flush();
-    f.close();
+    QString tempWav = QStandardPaths::writableLocation(QStandardPaths::TempLocation) + "/temp_save.wav";
 
-    // MODIFICATION : Utiliser getFFmpegPath() au lieu de "ffmpeg" en dur
-    QString ffmpegPath = getFFmpegPath();
-    
-    QStringList args;
-    args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
-         << "-i" << tmp
-         << "-c:a" << "pcm_s16le"
-         << targetFile;
-
-    // if (currentAudioFile.endsWith(".wav", Qt::CaseInsensitive)) {
-    //     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
-    //          << "-i" << tmp << "-c:a" << "pcm_s16le" << currentAudioFile;
-    // } else {
-    //     args << "-y" << "-f" << "f32le" << "-ar" << "44100" << "-ac" << "1"
-    //          << "-i" << tmp << currentAudioFile;
-    // }
-
-    QProcess ff;
-    ff.start(ffmpegPath, args);
-    
-    if (!ff.waitForFinished(15000) || ff.exitStatus() != QProcess::NormalExit) {
-        QMessageBox::warning(this, tr("Erreur FFmpeg"), tr("Échec de l'encodage."));
+    // Écriture du fichier temporaire
+    if (!writeWavFromFloatBuffer(tempWav)) {
+        QMessageBox::warning(this, tr("Erreur"), tr("Impossible d'écrire le WAV temporaire."));
         QApplication::restoreOverrideCursor();
+        player->setSource(QUrl::fromLocalFile(currentAudioFile));
         return;
     }
-    QFile::remove(tmp);
-    isModified = false;
 
-    // Mise à jour de l'état
-    if (isTempRecording) {
-        isTempRecording = false; // Ce n'est plus un temp, c'est un vrai fichier maintenant
+    bool success = false;
+
+    // ========================================================================
+    // CORRECTION 3 : BOUCLE DE RÉESSAI POUR LE FICHIER VERROUILLÉ (WAV)
+    // ========================================================================
+    if (targetFile.endsWith(".wav", Qt::CaseInsensitive)) {
+        
+        // Si le fichier existe, on essaie de le supprimer avec insistance
+        if (QFile::exists(targetFile)) {
+            bool removed = false;
+            // On essaie 10 fois avec 100ms de pause (1 seconde max)
+            for (int i = 0; i < 10; ++i) {
+                if (QFile::remove(targetFile)) {
+                    removed = true;
+                    break;
+                }
+                QThread::msleep(100); // Pause pour laisser Windows libérer le fichier
+            }
+
+            if (!removed) {
+                QMessageBox::warning(this, tr("Erreur"), 
+                    tr("Impossible d'écraser le fichier.\nIl est peut-être utilisé par une autre application ou l'antivirus."));
+                QFile::remove(tempWav);
+                QApplication::restoreOverrideCursor();
+                player->setSource(QUrl::fromLocalFile(currentAudioFile)); // On rétablit
+                return;
+            }
+        }
+        
+        // Copie du nouveau fichier
+        if (QFile::copy(tempWav, targetFile)) {
+            success = true;
+        } else {
+            QMessageBox::warning(this, tr("Erreur"), tr("Impossible de copier le fichier final."));
+        }
+        QFile::remove(tempWav);
+    } 
+    else {
+        // ====================================================================
+        // GESTION MP3 / AUTRES (Conversion FFmpeg)
+        // ====================================================================
+        // Pour le MP3, comme on a déjà appliqué l'Auto-Limiter au début,
+        // le son envoyé à FFmpeg est propre et ne saturera pas.
+        
+        QString ffmpegPath = getFFmpegPath();
+        QStringList args;
+        args << "-y" << "-i" << tempWav;
+        
+        if (targetFile.endsWith(".mp3", Qt::CaseInsensitive)) {
+            args << "-codec:a" << "libmp3lame" << "-q:a" << "2"; 
+        } else if (targetFile.endsWith(".m4a", Qt::CaseInsensitive)) {
+            args << "-codec:a" << "aac" << "-b:a" << "192k";
+        }
+        
+        args << targetFile;
+        QProcess ff;
+        ff.start(ffmpegPath, args);
+        
+        if (ff.waitForFinished(30000) && ff.exitStatus() == QProcess::NormalExit) {
+            success = true;
+        } else {
+            QString err = ff.readAllStandardError();
+            QMessageBox::warning(this, tr("Erreur FFmpeg"), tr("Échec encodage: %1").arg(err));
+        }
+        QFile::remove(tempWav);
+    }
+
+    QApplication::restoreOverrideCursor();
+
+    if (success) {
+        isModified = false;
+        if (isTempRecording) isTempRecording = false;
         currentAudioFile = targetFile;
         setWindowTitle(tr("Éditeur Audio - ") + QFileInfo(currentAudioFile).fileName());
+        QMessageBox::information(this, tr("Succès"), tr("Fichier sauvegardé avec succès."));
     }
-
-    player->setSource(QUrl::fromLocalFile(currentAudioFile));
-    QApplication::restoreOverrideCursor();
     
-    QMessageBox::information(this, tr("Succès"), tr("Fichier sauvegardé avec succès."));
+    // IMPORTANT : On recharge le fichier frais
+    player->setSource(QUrl::fromLocalFile(currentAudioFile));
 }
 
 void AudioEditor::updatePlayhead(qint64 ms)
@@ -632,8 +1043,10 @@ void AudioEditor::playPause()
         ui->btnPlay->setIcon(QIcon(":/icones/pause.png"));
 
         if (player->playbackState() == QMediaPlayer::StoppedState) {
-            int s = waveformWidget->getSelectionStart();
-            
+            qint64 s = waveformWidget->getSelectionStart();
+            if (s < 0) {
+                s = waveformWidget->getPlayheadPosition();
+            }            
             if (s >= 0 && totalSamples > 0 && player->duration() > 0) {
                 qint64 posMs = static_cast<qint64>((double)s / totalSamples * player->duration());
                 player->setPosition(posMs);
@@ -748,4 +1161,3 @@ void AudioEditor::closeEvent(QCloseEvent *event)
     releaseResources();
     AUDIOEDITOR_BASE::closeEvent(event);
 }
-

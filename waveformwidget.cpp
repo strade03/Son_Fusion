@@ -8,6 +8,7 @@
 
 WaveformWidget::WaveformWidget(QWidget* parent)
     : QWidget(parent)
+    , isLoading(false)
     , cacheValid(false)
     , totalSamples(0)
     , playheadSample(0)
@@ -31,6 +32,12 @@ WaveformWidget::WaveformWidget(QWidget* parent)
     layout->addStretch();
     layout->addWidget(scrollBar);
     connect(scrollBar, &QScrollBar::valueChanged, this, &WaveformWidget::handleScrollChanged);
+}
+
+void WaveformWidget::setLoading(bool loading)
+{
+    isLoading = loading;
+    update(); // Force le redessin immédiat
 }
 
 void WaveformWidget::setColors(const QColor &backgroundColor, const QColor &penColor, const QColor &penTextColor)
@@ -204,11 +211,23 @@ void WaveformWidget::paintEvent(QPaintEvent* event)
     // On utilise un gris clair pour dire "pas de données ici"
     painter.fillRect(rect(), QColor(230, 230, 230)); 
 
-    if (fullWaveform.isEmpty() || totalSamples <= 0) {
+        // --- CAS 1 : CHARGEMENT EN COURS (Prioritaire) ---
+    if (isLoading) {
         painter.setPen(penText);
-        painter.drawText(rect(), Qt::AlignCenter, tr("Aucun fichier audio chargé"));
-        return;
+        // On peut mettre une police un peu plus grosse ou différente si on veut
+        QFont f = painter.font();
+        f.setItalic(true);
+        painter.setFont(f);
+        painter.drawText(rect(), Qt::AlignCenter, tr("Chargement et analyse en cours..."));
+        return; // On s'arrête là, on ne dessine rien d'autre
     }
+
+    // // --- CAS 2 : PAS DE DONNÉES ---
+    // if (fullWaveform.isEmpty() || totalSamples <= 0) {
+    //     painter.setPen(penText);
+    //     painter.drawText(rect(), Qt::AlignCenter, tr("Aucun fichier audio chargé"));
+    //     return;
+    // }
 
     if (!cacheValid) recalcCache();
 
