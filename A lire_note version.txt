@@ -9,3 +9,6 @@ Ajout du temps lors de la fusion pour voir que ça avance.
 VF 12.12.2025 
 
 2.2 => Ajout de l'enregistrement permettant d'ajouter un enregistrement au dossier
+
+VF 6/1/2026
+2.22 => suppression des dépendances ffprobe
