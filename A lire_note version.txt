@@ -1,0 +1,11 @@
+dernière Correction 6/12/2025
+
+V2.1 => Gestion du numéro de version dans main.cpp qui sera reporté partout.
+
+Integration de la version 11.4 de l'éditeur
+Ajout du temps lors de la fusion pour voir que ça avance.
+=> Code rendu compatible pour une compilation Mac et Linux (Compilation sous github)
+
+VF 12.12.2025 
+
+2.2 => Ajout de l'enregistrement permettant d'ajouter un enregistrement au dossier

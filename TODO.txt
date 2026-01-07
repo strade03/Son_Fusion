@@ -1,0 +1,161 @@
+Pb de gros fichier corrigé
+
+
+Il sert juste à trouver la longeur du ficher, qmedia doit pouvoir le faire
+
+
+-----------------------------------------------------------------------------
+-- Version MAC :
+
+Le compromis : Le "Joli" DMG (Recommandé)
+Si tu trouves que ton DMG actuel fait un peu "pauvre" (juste une fenêtre blanche avec ton fichier), la vraie méthode Mac pour faire "Pro", c'est de styliser le DMG (ajouter une image de fond, une flèche et un raccourci vers Applications).
+Pour faire ça sur GitHub Actions, on utilise un outil appelé create-dmg.
+Voici à quoi ressemblerait ton script macOS idéal (le plus pro pour un utilisateur Mac) :
+build.yml : 
+-------------------------------------------------------------------------------------
+- name: Création du paquet et Signature
+        run: |
+          # 1. Installation de l'outil de création de DMG stylé
+          brew install create-dmg
+          
+          # ... (Tes étapes de copie FFmpeg et macdeployqt comme avant) ...
+          
+          # ... (Ta signature codesign comme avant) ...
+          
+          # 2. Création du "Beau" DMG
+          mkdir -p dist
+          create-dmg \
+            --volname "Installeur SonFusion" \
+            --window-pos 200 120 \
+            --window-size 800 400 \
+            --icon-size 100 \
+            --icon "son_fusion.app" 200 190 \
+            --hide-extension "son_fusion.app" \
+            --app-drop-link 600 185 \
+            "dist/SonFusion_macOS.dmg" \
+            "deploy/son_fusion.app"
+
+      - name: Upload Artifact macOS
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonFusion-macOS
+          path: dist/SonFusion_macOS.dmg
+-------------------------------------------------------------------------------------
+
+Ajoute la création du .deb
+
+Puisque tu compiles sur ubuntu-22.04 dans GitHub Actions, il est très facile de générer un fichier .deb en plus de l'AppImage. Comme ça, tu couvres les besoins des utilisateurs Ubuntu (très nombreux) de façon propre.
+Voici comment modifier ton Job Linux pour créer aussi un .deb.
+Remplace ton étape build-linux par celle-ci (j'ai ajouté la section "Création du DEB" à la fin) :
+-------------------------------------------------------------------------------------
+# =========================================================
+  # JOB LINUX (AppImage + DEB)
+  # =========================================================
+  build-linux:
+    name: Build Linux (AppImage & DEB)
+    runs-on: ubuntu-22.04 
+    
+    steps:
+      - name: Checkout du code
+        uses: actions/checkout@v4
+
+      - name: Installation de Qt
+        uses: jurplel/install-qt-action@v3
+        with:
+          version: '6.6.2'
+          host: 'linux'
+          target: 'desktop'
+          modules: 'qtmultimedia qt5compat'
+
+      - name: Installation des dépendances
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libunwind-dev build-essential libgl1-mesa-dev \
+            libpulse-dev libasound2-dev \
+            libgstreamer1.0-dev libgstreamer-plugins-base1.0-dev \
+            ffmpeg libxcb-cursor0 libxcb-xinerama0
+
+      - name: Compilation
+        run: |
+          qmake son_fusion.pro CONFIG+=release
+          make -j$(nproc)
+
+      # ---------------------------------------------------------
+      # PARTIE 1 : APPIMAGE (Universel)
+      # ---------------------------------------------------------
+      - name: Création de l'AppImage
+        run: |
+          wget -q https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage
+          chmod +x linuxdeployqt-continuous-x86_64.AppImage
+
+          # Création du .desktop
+          cat > son_fusion.desktop <<EOF
+          [Desktop Entry]
+          Type=Application
+          Name=SonFusion
+          Exec=son_fusion
+          Icon=son_fusion
+          Categories=AudioVideo;Audio;
+          Terminal=false
+          EOF
+          
+          # On copie l'icône pour qu'elle soit trouvée par linuxdeployqt
+          cp icones/fusionner.png son_fusion.png
+
+          unset QT_PLUGIN_PATH
+          export LD_LIBRARY_PATH=$LD_LIBRARY_PATH
+          
+          # Création de l'AppImage
+          ./linuxdeployqt-continuous-x86_64.AppImage ./son_fusion -appimage -unsupported-allow-new-glibc -extra-plugins=iconengines,platformthemes
+
+          mv SonFusion-*.AppImage SonFusion_Linux.AppImage
+
+      # ---------------------------------------------------------
+      # PARTIE 2 : PAQUET .DEB (Ubuntu/Debian)
+      # ---------------------------------------------------------
+      - name: Création du paquet DEB
+        run: |
+          # 1. Créer la structure des dossiers
+          mkdir -p package/DEBIAN
+          mkdir -p package/usr/local/bin
+          mkdir -p package/usr/share/applications
+          mkdir -p package/usr/share/icons/hicolor/256x256/apps
+          
+          # 2. Copier les fichiers
+          cp son_fusion package/usr/local/bin/
+          cp son_fusion.desktop package/usr/share/applications/
+          cp icones/fusionner.png package/usr/share/icons/hicolor/256x256/apps/son_fusion.png
+          
+          # 3. Créer le fichier de contrôle (Métadonnées)
+          # Note: Depends liste les librairies vitales.
+          cat > package/DEBIAN/control <<EOF
+          Package: sonfusion
+          Version: 2.1
+          Architecture: amd64
+          Maintainer: TonNom <tonemail@example.com>
+          Installed-Size: 5000
+          Depends: libc6, libstdc++6, libqt6core6, libqt6gui6, libqt6widgets6, libqt6multimedia6, ffmpeg
+          Section: sound
+          Priority: optional
+          Description: SonFusion Audio Editor
+           Application de fusion et d'édition audio simple et rapide.
+          EOF
+          
+          # 4. Construire le paquet
+          dpkg-deb --build package SonFusion_Linux_Ubuntu.deb
+
+      - name: Upload Artifacts Linux
+        uses: actions/upload-artifact@v4
+        with:
+          name: SonFusion-Linux
+          path: |
+            SonFusion_Linux.AppImage
+            SonFusion_Linux_Ubuntu.deb
+-------------------------------------------------------------------------------------
+Résumé de ce que tu auras :
+
+    SonFusion_Linux.AppImage : Le fichier "Tout terrain". Il contient toutes les librairies Qt à l'intérieur. Il est gros (~60-100Mo) mais il marche partout.
+
+    SonFusion_Linux_Ubuntu.deb : Le fichier "Installeur". Il est tout petit (~500Ko) car il ne contient que ton programme. Quand l'utilisateur l'installera, Ubuntu téléchargera automatiquement Qt6 et FFmpeg pour lui (grâce à la ligne Depends).
+
+C'est la méthode la plus professionnelle pour Linux : offrir le choix entre le "Portable" (AppImage) et le "Natif" (Deb).
